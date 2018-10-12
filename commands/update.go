@@ -1,4 +1,4 @@
-package cmd
+package commands
 
 import (
 	"fmt"
@@ -20,7 +20,7 @@ var UpdateCmd = &cobra.Command{
 			os.Exit(1)
 		} else {
 			path := os.Getenv("GOPATH")
-			os.Chdir(Concat(path, "/src/cobra"))
+			os.Chdir(Concat(path, "/src/cli"))
 			cliCmd, err := exec.Command("go", "get", os.Args[2]).CombinedOutput()
 			if err != nil {
 

@@ -1,4 +1,4 @@
-package cmd
+package commands
 
 import (
 	"fmt"
@@ -59,7 +59,7 @@ func InstallPluginHelper(args string) error {
 	//Get the current GOPATH.
 	path := os.Getenv("GOPATH")
 	//Change the Dir.
-	err := os.Chdir(Concat(path, "/src/cobra"))
+	err := os.Chdir(Concat(path, "/src/cli/cmd/flogo"))
 
 	die(err)
 
@@ -86,14 +86,14 @@ func BuildModule(args string, flag bool) {
 	//Get the current GOPATH.
 	path := os.Getenv("GOPATH")
 	//Change the Dir.
-	err := os.Chdir(Concat(path, "/src/cobra"))
+	err := os.Chdir(Concat(path, "/src/cli/cmd/flogo"))
 
 	die(err)
 
 	currdir, _ := os.Getwd()
 
 	//Build the modules.
-	cliCmd, err := exec.Command("go", "build", "-o", "flogo").CombinedOutput()
+	cliCmd, err := exec.Command("go", "build").CombinedOutput()
 
 	if err != nil {
 		RemoveModFromImportPlugin(args, currdir)
@@ -102,7 +102,7 @@ func BuildModule(args string, flag bool) {
 
 		log.Fatal(err)
 	}
-	cliCmd, err = exec.Command("cp", Concat(os.Getenv("GOPATH"), "/src/cobra/flogo"), Concat(os.Getenv("GOPATH"), "/bin")).CombinedOutput()
+	cliCmd, err = exec.Command("cp", Concat(os.Getenv("GOPATH"), "/src/cli/cmd/flogo/flogo"), Concat(os.Getenv("GOPATH"), "/bin")).CombinedOutput()
 	if err != nil {
 		RemoveModFromImportPlugin(args, currdir)
 

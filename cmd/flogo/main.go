@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/project-flogo/cli/cmd"
+	"github.com/project-flogo/cli/commands"
 )
 
 func main() {
@@ -11,6 +11,6 @@ func main() {
 
 	//Initialize the commands
 
-	cmd.Initialize()
-	cmd.Execute()
+	commands.Initialize()
+	commands.Execute()
 }

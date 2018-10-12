@@ -1,4 +1,4 @@
-package cmd
+package commands
 
 import (
 	"bufio"
@@ -109,7 +109,7 @@ func AddFiles(dir string) {
 	currDir, err := os.Getwd()
 
 	path := os.Getenv("GOPATH")
-	os.Chdir(Concat(path, "/src/cobra"))
+	os.Chdir(Concat(path, "/src/cli"))
 
 	cliCmd, err := exec.Command("go", "get", "github.com/project-flogo/core").CombinedOutput()
 	if err != nil {
@@ -117,7 +117,6 @@ func AddFiles(dir string) {
 
 		log.Fatal(err)
 	}
-	err = os.Mkdir(Concat(currDir, "/", dir, "/pkg"), os.ModePerm)
 	err = os.Mkdir(Concat(currDir, "/", dir, "/bin"), os.ModePerm)
 	err = os.Mkdir(Concat(currDir, "/", dir, "/src"), os.ModePerm)
 
