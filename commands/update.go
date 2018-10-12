@@ -20,7 +20,7 @@ var UpdateCmd = &cobra.Command{
 			os.Exit(1)
 		} else {
 			path := os.Getenv("GOPATH")
-			os.Chdir(Concat(path, "/src/cli"))
+			os.Chdir(Concat(path, "/src/github.com/project-flogo/cli"))
 			cliCmd, err := exec.Command("go", "get", os.Args[2]).CombinedOutput()
 			if err != nil {
 
