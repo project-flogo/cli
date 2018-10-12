@@ -109,7 +109,7 @@ func AddFiles(dir string) {
 	currDir, err := os.Getwd()
 
 	path := os.Getenv("GOPATH")
-	os.Chdir(Concat(path, "/src/cli"))
+	os.Chdir(Concat(path, "/src/github.com/project-flogo/cli"))
 
 	cliCmd, err := exec.Command("go", "get", "github.com/project-flogo/core").CombinedOutput()
 	if err != nil {

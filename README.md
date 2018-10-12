@@ -1,6 +1,6 @@
 EXPERIMENTAL, DO NOT USE
 ## Requirements
-Go 1.11
+Go 1.11.
 ##Install
 Before installing make sure the GO111MODULE is set as off. 
 ## After Instalation.
