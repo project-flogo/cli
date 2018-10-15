@@ -13,6 +13,8 @@ import (
 )
 
 var file bool
+var core string
+
 var CreateCmd = &cobra.Command{
 	Use:   "create",
 	Short: "Flogo Cli lets you create with Flogo",
@@ -25,31 +27,37 @@ var CreateCmd = &cobra.Command{
 				os.Exit(1)
 			} else {
 				fmt.Println("Building the Flogo.")
+				//Check if file exists
+				fileName := os.Args[len(os.Args)-1]
+				CheckFile(fileName)
 
-				CheckFile(os.Args[3])
+				CreateAppFolder(strings.Split(fileName, ".")[0])
 
-				CreateAppFolder(strings.Split(os.Args[3], ".")[0])
+				AddFiles(strings.Split(fileName, ".")[0], core)
 
-				AddFiles(strings.Split(os.Args[3], ".")[0])
+				populateFilesFromSrc(strings.Split(fileName, ".")[0])
 
-				populateFilesFromFile(strings.Split(os.Args[3], ".")[0])
-
-				listsOfRefs := GetRefsFromFile(os.Args[3])
+				listsOfRefs := GetRefsFromFile(fileName)
 
 				for _, ref := range listsOfRefs {
 
 					fmt.Println("Installing ", ref)
 					currDir, _ := os.Getwd()
-					os.Chdir(Concat(currDir, "/", strings.Split(os.Args[3], ".")[0]))
+					//Move to the App folder.
+					os.Chdir(Concat(currDir, "/", strings.Split(fileName, ".")[0]))
 					currDir, _ = os.Getwd()
-
+					//Edit imports file in the App Folder
 					AddModToImport(ref, currDir)
 				}
 			}
 		} else {
-			CreateAppFolder(os.Args[2])
-			AddFiles(os.Args[2])
-			populateFilesFromCore(os.Args[2])
+
+			CreateAppFolder(os.Args[len(os.Args)-1])
+
+			AddFiles(os.Args[len(os.Args)-1], core)
+
+			populateFilesFromCore(os.Args[len(os.Args)-1])
+
 		}
 
 	},
@@ -58,6 +66,7 @@ var CreateCmd = &cobra.Command{
 func init() {
 	RootCmd.AddCommand(CreateCmd)
 	CreateCmd.Flags().BoolVarP(&file, "file", "f", false, "Enter file")
+	CreateCmd.Flags().StringVarP(&core, "core", "c", "", "Enter core version")
 }
 func CheckFile(args string) {
 	if !strings.Contains(args, ".json") {
@@ -104,19 +113,11 @@ func GetRefsFromFile(args string) []string {
 
 	return result
 }
-func AddFiles(dir string) {
-
+func AddFiles(dir string, core string) {
+	//Get the Curr Dir.
 	currDir, err := os.Getwd()
 
-	path := os.Getenv("GOPATH")
-	os.Chdir(Concat(path, "/src/github.com/project-flogo/cli"))
-
-	cliCmd, err := exec.Command("go", "get", "github.com/project-flogo/core").CombinedOutput()
-	if err != nil {
-		fmt.Println(string(cliCmd))
-
-		log.Fatal(err)
-	}
+	//Add folders and files in the app folder
 	err = os.Mkdir(Concat(currDir, "/", dir, "/bin"), os.ModePerm)
 	err = os.Mkdir(Concat(currDir, "/", dir, "/src"), os.ModePerm)
 
@@ -124,13 +125,33 @@ func AddFiles(dir string) {
 
 	_, err = os.Create(Concat(currDir, "/", dir, "/src/main.go"))
 
+	//Move to src/ in App to initialize mod file.
 	os.Chdir(Concat(currDir, "/", dir, "/src"))
 
-	cliCmd, err = exec.Command("go", "mod", "init", "main").Output()
+	cliCmd, err := exec.Command("go", "mod", "init", "main").Output()
 	cliCmd, err = exec.Command("go", "mod", "edit", "-require", "github.com/sirupsen/logrus@v1.1.1").Output()
+	if len(core) > 1 {
+		if core == "master" {
+			cliCmd, err = exec.Command("go", "get", "github.com/project-flogo/core@master").CombinedOutput()
+		} else {
+			cliCmd, err = exec.Command("go", "mod", "edit", "-require", Concat("github.com/project-flogo/core@", core)).Output()
+		}
+	} else {
+		cliCmd, err = exec.Command("go", "get", "github.com/project-flogo/core").CombinedOutput()
+	}
+
+	if err != nil {
+		fmt.Println(string(cliCmd))
+
+		log.Fatal(err)
+	}
 	os.Chdir(Concat(currDir, "/", dir))
 	if err != nil {
 		fmt.Println(string(cliCmd))
+		log.Fatal(err)
+	}
+	err = ioutil.WriteFile(Concat(currDir, "/", dir, "/src/imports.go"), []byte("package main\n import (\n _ \"github.com/project-flogo/core/app\" \n )"), 0644)
+	if err != nil {
 		log.Fatal(err)
 	}
 
@@ -140,7 +161,7 @@ func populateFilesFromCore(path string) {
 	//Edit Import
 	currDir, err := os.Getwd()
 
-	filePath := Concat(os.Getenv("GOPATH"), "/pkg/mod/", "github.com/project-flogo/core@v0.0.0-20181011190026-74dbc11c8b5a", "/examples/engine/imports.go")
+	filePath := Concat(os.Getenv("GOPATH"), "/pkg/mod/", getTruePath(currDir, "github.com/project-flogo/core"), "/examples/engine/imports.go")
 
 	byteArray, err := ioutil.ReadFile(filePath)
 
@@ -153,7 +174,7 @@ func populateFilesFromCore(path string) {
 		log.Fatal(err)
 	}
 	//Edit Json
-	filePath = Concat(os.Getenv("GOPATH"), "/pkg/mod/", "github.com/project-flogo/core@v0.0.0-20181011190026-74dbc11c8b5a", "/examples/engine/flogo.json")
+	filePath = Concat(os.Getenv("GOPATH"), "/pkg/mod/", getTruePath(currDir, "github.com/project-flogo/core"), "/examples/engine/flogo.json")
 
 	byteArray, err = ioutil.ReadFile(filePath)
 
@@ -167,7 +188,7 @@ func populateFilesFromCore(path string) {
 		log.Fatal(err)
 	}
 	//Edit main
-	filePath = Concat(os.Getenv("GOPATH"), "/pkg/mod/", "github.com/project-flogo/core@v0.0.0-20181011190026-74dbc11c8b5a", "/examples/engine/main.go")
+	filePath = Concat(os.Getenv("GOPATH"), "/pkg/mod/", getTruePath(currDir, "github.com/project-flogo/core"), "/examples/engine/main.go")
 
 	byteArray, err = ioutil.ReadFile(filePath)
 
@@ -192,9 +213,23 @@ func populateFilesFromCore(path string) {
 
 }
 
-func populateFilesFromFile(path string) {
-	//Edit Import
+func populateFilesFromSrc(path string) {
 	currDir, err := os.Getwd()
+
+	//Edit main
+	filePath := Concat(os.Getenv("GOPATH"), "/pkg/mod/", getTruePath(currDir, "github.com/project-flogo/core"), "/examples/engine/main.go")
+
+	byteArray, err := ioutil.ReadFile(filePath)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = ioutil.WriteFile(Concat(currDir, "/src/main.go"), byteArray, 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
+	//Edit Import
+
 	err = ioutil.WriteFile(Concat(currDir, "/src/imports.go"), []byte("package main \n import ( \n _ \"os\" \n )"), 0644)
 	if err != nil {
 		log.Fatal(err)
@@ -209,20 +244,6 @@ func populateFilesFromFile(path string) {
 
 	if _, err = f.WriteString("\n replace github.com/Sirupsen/logrus v1.1.0 => github.com/sirupsen/logrus v1.1.0 \n replace github.com/TIBCOSoftware/flogo-lib v0.5.6 => github.com/TIBCOSoftware/flogo-lib v0.5.7-0.20181009194308-1fe2a7011501 \n"); err != nil {
 		panic(err)
-	}
-
-	//Edit main
-
-	filePath := Concat(os.Getenv("GOPATH"), "/pkg/mod/", "github.com/project-flogo/core@v0.0.0-20181011190026-74dbc11c8b5a", "/examples/engine/main.go")
-
-	byteArray, err := ioutil.ReadFile(filePath)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = ioutil.WriteFile(Concat(currDir, "/src/main.go"), byteArray, 0644)
-	if err != nil {
-		log.Fatal(err)
 	}
 
 	//Copy Json

@@ -8,27 +8,44 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"os/exec"
 	"strings"
 )
 
 //Check the current module downloaded for refs,
 //If present we need to download legacybridge.
-func NeedsLegacySupport(args string) bool {
+
+func CheckforLegacySupport(args string) bool {
 
 	path := os.Getenv("GOPATH")
 	currDir, _ := os.Getwd()
 	truePath := getTruePath(currDir, args)
+	dirPath := Concat(path, "/pkg/mod/", truePath)
+	_, err := os.Stat(dirPath)
 
-	files, err := ioutil.ReadDir(Concat(path, "/pkg/mod/", truePath))
+	if os.IsNotExist(err) {
 
-	if err != nil {
-		log.Fatal(err)
-		return false
+		tag := strings.Split(strings.Split(truePath, "/")[2], "@")[1]
+
+		for i := 3; os.IsNotExist(err); i++ {
+
+			elements := strings.Split(args, "/")
+
+			elements[i] = Concat(elements[i], "@", tag)
+
+			tempPath := strings.Join(elements, "/")
+			dirPath = Concat(path, "/pkg/mod/", tempPath)
+
+			_, err = os.Stat(dirPath)
+
+		}
 	}
+
+	files, err := ioutil.ReadDir(dirPath)
 	for _, f := range files {
 		if strings.Contains(f.Name(), ".json") {
 
-			listsOfRefs := GetRefsFromFile(Concat(path, "/pkg/mod/", truePath, "/", f.Name()))
+			listsOfRefs := GetRefsFromFile(Concat(dirPath, "/", f.Name()))
 			if len(listsOfRefs) == 1 {
 				return true
 			}
@@ -41,8 +58,18 @@ func NeedsLegacySupport(args string) bool {
 //True Path becase the packages are stored in the version format and we need to get the version
 //in order to navigate to that path.
 func getTruePath(path string, pkg string) string {
+
+	os.Chdir(Concat(path, "/src"))
+	cliCmd, err := exec.Command("go", "mod", "tidy").Output()
+	os.Chdir(path)
+
 	fmt.Println("Opening go.mod")
 	file, err := os.Open(Concat(path, "/src/go.mod"))
+
+	if err != nil {
+		fmt.Println(string(cliCmd))
+		fmt.Println(err)
+	}
 	if err != nil {
 		log.Fatal(err)
 	}

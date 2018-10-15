@@ -37,8 +37,8 @@ func InstallPackage(args string, path string) {
 		BuildAppModule(args)
 		path, _ := os.Getwd()
 
-		if NeedsLegacySupport(args) && legacySupport {
-			fmt.Println("Needs Support")
+		if CheckforLegacySupport(args) && legacySupport {
+			fmt.Println("Needs Leagacy Bridge Support")
 			updateLegacyBridge(path)
 
 			InstallPackageHelper("github.com/project-flogo/legacybridge")

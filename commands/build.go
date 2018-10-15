@@ -16,6 +16,7 @@ var buildCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		if checkCurrDir() {
 			path, _ := os.Getwd()
+			//Move to the src/ dir in the App.
 			os.Chdir(Concat(path, "/src"))
 			cliCmd, err := exec.Command("go", "build").CombinedOutput()
 			if err != nil {
@@ -24,6 +25,7 @@ var buildCmd = &cobra.Command{
 			die(err)
 			_, err = exec.Command("cp", "main", "../bin/").Output()
 			die(err)
+			//Reset the Dir.
 			os.Chdir(path)
 		}
 
