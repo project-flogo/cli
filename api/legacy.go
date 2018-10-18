@@ -1,4 +1,4 @@
-package commands
+package api
 
 //Legacy Helper Functions
 import (
@@ -11,6 +11,8 @@ import (
 	"os/exec"
 	"strings"
 )
+
+var legacySupport bool
 
 //Check the current module downloaded for refs,
 //If present we need to download legacybridge.
