@@ -1,10 +1,7 @@
 package commands
 
 import (
-	"fmt"
-	"os"
-	"os/exec"
-
+	"github.com/project-flogo/cli/api"
 	"github.com/spf13/cobra"
 )
 
@@ -14,21 +11,7 @@ var buildCmd = &cobra.Command{
 	Short: "Build the App module",
 	Long:  `All software has versions. This is Hugo's`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if checkCurrDir() {
-			path, _ := os.Getwd()
-			//Move to the src/ dir in the App.
-			os.Chdir(Concat(path, "/src"))
-			cliCmd, err := exec.Command("go", "build").CombinedOutput()
-			if err != nil {
-				fmt.Println(string(cliCmd))
-			}
-			die(err)
-			_, err = exec.Command("cp", "main", "../bin/").Output()
-			die(err)
-			//Reset the Dir.
-			os.Chdir(path)
-		}
-
+		api.BuildProject()
 	},
 }
 

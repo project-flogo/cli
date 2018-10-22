@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 
+	"github.com/project-flogo/cli/api"
 	"github.com/spf13/cobra"
 )
 
@@ -20,7 +21,7 @@ var UpdateCmd = &cobra.Command{
 			os.Exit(1)
 		} else {
 			path := os.Getenv("GOPATH")
-			os.Chdir(Concat(path, "/src/github.com/project-flogo/cli"))
+			os.Chdir(api.Concat(path, "/src/github.com/project-flogo/cli"))
 			cliCmd, err := exec.Command("go", "get", os.Args[2]).CombinedOutput()
 			if err != nil {
 
@@ -29,7 +30,7 @@ var UpdateCmd = &cobra.Command{
 				log.Fatal(err)
 
 			}
-			BuildModule(os.Args[2], true)
+			api.BuildModule(os.Args[2], true)
 		}
 
 	},

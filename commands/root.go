@@ -1,17 +1,13 @@
 package commands
 
 import (
-	"bytes"
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/project-flogo/cli/registry"
 
 	"github.com/spf13/cobra"
 )
-
-var legacySupport bool
 
 //Root command
 var RootCmd = &cobra.Command{
@@ -54,21 +50,4 @@ func Execute() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-}
-
-func die(err error) {
-	if err != nil {
-		fmt.Println("Error in module installtion")
-		log.Fatal(err)
-	}
-}
-
-func Concat(path ...string) string {
-	var b bytes.Buffer
-
-	for _, p := range path {
-		b.WriteString(p)
-	}
-
-	return b.String()
 }
