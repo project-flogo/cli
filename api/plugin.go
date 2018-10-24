@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -100,3 +101,21 @@ func RemoveModFromImportPlugin(pkg string, fpath string) {
 
 	die(err)
 }
+
+func die(err error) {
+	if err != nil {
+		fmt.Println("Error in module installtion")
+		log.Fatal(err)
+	}
+}
+
+func Concat(path ...string) string {
+	var b bytes.Buffer
+
+	for _, p := range path {
+		b.WriteString(p)
+	}
+
+	return b.String()
+}
+

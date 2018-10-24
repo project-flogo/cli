@@ -8,34 +8,38 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var file bool
-var core string
+var flogoJsonPath string
+var coreVersion string
 
 var CreateCmd = &cobra.Command{
-	Use:   "create",
-	Short: "Flogo Cli lets you create with Flogo",
-	Long:  `Flogo Cli create is great! `,
+	Use:              "create [flags] [appName]",
+	Short:            "create a flogo application project",
+	Long:             `Creates a flogo application project.`,
+	Args:             cobra.RangeArgs(0, 1),
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {},
 	Run: func(cmd *cobra.Command, args []string) {
-		if file {
-			if len(os.Args) <= 3 {
-				fmt.Println("Enter file name")
-				os.Exit(1)
-			}
+
+		appName := ""
+		if len(args) > 0 {
+			appName = args[0]
 		}
 
-		currDir, err := os.Getwd()
+		currentDir, err := os.Getwd()
 		if err != nil {
-			fmt.Println("Error in determinng Dir")
+			fmt.Println("unable to determine working directory")
 			os.Exit(1)
 		}
 
-		err = api.CreateProject(os.Args[len(os.Args)-1], file, core, currDir)
-		fmt.Println(err)
+		err = api.CreateProject(currentDir, appName, flogoJsonPath, coreVersion)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			os.Exit(1)
+		}
 	},
 }
 
 func init() {
-	RootCmd.AddCommand(CreateCmd)
-	CreateCmd.Flags().BoolVarP(&file, "file", "f", false, "Enter file")
-	CreateCmd.Flags().StringVarP(&core, "core", "c", "", "Enter core version")
+	CreateCmd.Flags().StringVarP(&flogoJsonPath, "file", "f", "", "path to flogo.json file")
+	CreateCmd.Flags().StringVarP(&coreVersion, "core", "c", "", "specify core library version")
+	rootCmd.AddCommand(CreateCmd)
 }
