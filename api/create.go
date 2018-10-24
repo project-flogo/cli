@@ -1,197 +1,163 @@
 package api
 
 import (
-	"bufio"
-	"errors"
+	"encoding/json"
 	"fmt"
+	"github.com/project-flogo/cli/common"
+	"github.com/project-flogo/cli/util"
 	"io/ioutil"
-	"log"
 	"os"
-	"os/exec"
+	"path/filepath"
 	"strings"
 )
 
-func CreateProject(file string, flag bool, corev string, appPath string) error {
+var fileSampleFlogoJson = filepath.Join("examples", "engine", "flogo.json")
+var fileSampleEngineMain = filepath.Join("examples", "engine", "main.go")
 
-	if appPath == "." {
-		appPath, _ = os.Getwd()
+func CreateProject(basePath, appName, appCfgPath, coreVersion string) error {
 
-	}
+	var err error
+	var appJson string
 
-	return createProject(file, flag, corev, appPath)
+	if appCfgPath != "" {
 
-}
+		if util.IsRemote(appCfgPath) {
 
-func createProject(fileName string, flag bool, coreVersion string, appPath string) error {
-	if flag {
-
-		fmt.Println("Building the Flogo.")
-		//Check if file exists
-
-		err := CheckFile(fileName)
-		if err != nil {
-			return err
-		}
-
-		err = CreateAppFolder(strings.Split(fileName, ".")[0], appPath)
-		if err != nil {
-			return err
-		}
-
-		err = AddFiles(strings.Split(fileName, ".")[0], coreVersion, appPath)
-		if err != nil {
-			return err
-		}
-
-		err = populateFiles(strings.Split(fileName, ".")[0], Concat(appPath, "/", strings.Split(fileName, ".")[0]), true)
-		if err != nil {
-			return err
-		}
-
-		listsOfRefs := GetRefsFromFile(Concat(appPath, "/", fileName))
-
-		for _, ref := range listsOfRefs {
-
-			fmt.Println("Installing ", ref)
-			//Move to the App folder.
-			os.Chdir(Concat(appPath, "/", strings.Split(fileName, ".")[0]))
-			currDir, _ := os.Getwd()
-			//Edit imports file in the App Folder
-			AddModToImport(ref, currDir)
-		}
-
-	} else {
-
-		err := CreateAppFolder(fileName, appPath)
-		if err != nil {
-			return err
-		}
-
-		err = AddFiles(fileName, coreVersion, appPath)
-		if err != nil {
-			return err
-		}
-
-		err = populateFiles(fileName, Concat(appPath, "/", fileName), false)
-		if err != nil {
-			return err
-		}
-
-	}
-	return nil
-}
-
-func CheckFile(args string) error {
-	if !strings.Contains(args, ".json") {
-		fmt.Println("Please enter file name")
-		return errors.New("Please enter file name")
-	}
-	return nil
-}
-func CreateAppFolder(args string, path string) error {
-
-	dirName := strings.Split(args, ".")[0]
-
-	err := os.Mkdir(Concat(path, "/", dirName), os.ModePerm)
-
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func GetRefsFromFile(args string) []string {
-
-	var result []string
-
-	file, err := os.Open(args)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		line := scanner.Text()
-
-		if strings.Contains(line, "ref") {
-			pkg := strings.Split(line, ":")[1]
-			pkg = strings.TrimSpace(pkg)
-			pkg = pkg[1 : len(pkg)-2]
-			result = append(result, pkg)
-		}
-	}
-
-	if err := scanner.Err(); err != nil {
-		log.Fatal(err)
-	}
-
-	return result
-}
-func AddFiles(dir string, core string, currDir string) error {
-	//Get the Curr Dir.
-
-	//Add folders and files in the app folder
-	err := os.Mkdir(Concat(currDir, "/", dir, "/bin"), os.ModePerm)
-	if err != nil {
-		return err
-	}
-	err = os.Mkdir(Concat(currDir, "/", dir, "/src"), os.ModePerm)
-	if err != nil {
-		return err
-	}
-
-	_, err = os.Create(Concat(currDir, "/", dir, "/src/imports.go"))
-	if err != nil {
-		return err
-	}
-
-	_, err = os.Create(Concat(currDir, "/", dir, "/src/main.go"))
-	if err != nil {
-		return err
-	}
-
-	//Move to src/ in App to initialize mod file.
-	os.Chdir(Concat(currDir, "/", dir, "/src"))
-
-	cliCmd, err := exec.Command("go", "mod", "init", "main").Output()
-	if err != nil {
-		return err
-	}
-
-	cliCmd, err = exec.Command("go", "mod", "edit", "-require", "github.com/sirupsen/logrus@v1.1.1").Output()
-
-	if len(core) > 1 {
-		if core == "master" {
-			cliCmd, err = exec.Command("go", "get", "github.com/project-flogo/core@master").CombinedOutput()
+			appJson, err = util.LoadRemoteFile(appCfgPath)
 			if err != nil {
-				return err
+				return fmt.Errorf("error loading remote app file '%s' - %s", appCfgPath, err.Error())
 			}
-
 		} else {
-			cliCmd, err = exec.Command("go", "mod", "edit", "-require", Concat("github.com/project-flogo/core@", core)).Output()
+			appJson, err = util.LoadLocalFile(appCfgPath)
 			if err != nil {
-				return err
+				return fmt.Errorf("error loading app file file '%s' - %s", appCfgPath, err.Error())
 			}
-
 		}
-		cliCmd, err = exec.Command("go", "get", "github.com/project-flogo/core").CombinedOutput()
+	} else {
+		if len(appName) == 0 {
+			return fmt.Errorf("app name not specified")
+		}
+	}
+
+	appName, err = getAppName(appName, appJson)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("Creating Flogo App: %s\n", appName)
+
+	appDir, err := createAppDirectory(basePath, appName)
+	if err != nil {
+		return err
+	}
+
+	srcDir := filepath.Join(appDir, "src")
+	dm := util.NewDepManager(srcDir)
+
+	if Verbose() {
+		fmt.Printf("Setting up app directory: %s\n", appDir)
+	}
+	err = setupAppDirectory(dm, appDir, coreVersion)
+	if err != nil {
+		return err
+	}
+
+	if Verbose() {
+		if appJson == "" {
+			fmt.Println("Adding sample flogo.json")
+		}
+	}
+	err = createAppJson(dm, appDir, appName, appJson)
+	if err != nil {
+		return err
+	}
+
+	err = createMain(dm, appDir)
+	if err != nil {
+		return err
+	}
+
+	project := NewAppProject(appDir)
+
+	if Verbose() {
+		fmt.Println("Importing Dependencies...")
+	}
+	err = importDependencies(project)
+	if err != nil {
+		return err
+	}
+
+	if Verbose() {
+		fmt.Printf("Created App: %s\n", appName)
+	}
+
+	return nil
+}
+
+// createAppDirectory creates the flogo app directory
+func createAppDirectory(basePath, appName string) (string, error) {
+
+	var err error
+
+	if basePath == "." {
+		basePath, err = os.Getwd()
 		if err != nil {
-			return err
+			return "", err
 		}
 	}
 
+	appPath := filepath.Join(basePath, appName)
+	err = os.Mkdir(appPath, os.ModePerm)
 	if err != nil {
-		fmt.Println(string(cliCmd))
+		return "", err
+	}
 
-		return err
-	}
-	os.Chdir(Concat(currDir, "/", dir))
+	return appPath, nil
+}
+
+//setupAppDirectory sets up the flogo app directory
+func setupAppDirectory(dm util.DepManager, appPath, coreVersion string) error {
+
+	err := os.Mkdir(filepath.Join(appPath, dirBin), os.ModePerm)
 	if err != nil {
-		fmt.Println(string(cliCmd))
 		return err
 	}
-	err = ioutil.WriteFile(Concat(currDir, "/", dir, "/src/imports.go"), []byte("package main\n import (\n _ \"github.com/project-flogo/core/app\" \n )"), 0644)
+
+	srcDir := filepath.Join(appPath, dirSrc)
+	err = os.Mkdir(srcDir, os.ModePerm)
+	if err != nil {
+		return err
+	}
+
+	_, err = os.Create(filepath.Join(srcDir, fileImportsGo))
+	if err != nil {
+		return err
+	}
+	err = ioutil.WriteFile(filepath.Join(srcDir, fileImportsGo), []byte("package main\n"), 0644)
+	if err != nil {
+		return err
+	}
+
+	err = dm.Init()
+	if err != nil {
+		return err
+	}
+
+	// add & fetch the core library
+	dm.AddDependency(flogoCoreRepo, coreVersion, true)
+
+	return nil
+}
+
+// createAppJson create the flogo app json
+func createAppJson(dm util.DepManager, appDir, appName, appJson string) error {
+
+	updatedJson, err := getAndUpdateAppJson(dm, appName, appJson)
+	if err != nil {
+		return err
+	}
+
+	err = ioutil.WriteFile(filepath.Join(appDir, fileFlogoJson), []byte(updatedJson), 0644)
 	if err != nil {
 		return err
 	}
@@ -199,76 +165,133 @@ func AddFiles(dir string, core string, currDir string) error {
 	return nil
 }
 
-func populateFiles(file string, currDir string, src bool) (err error) {
-
-	//Is source present
-	if src {
-		//Edit Import
-		AddModToImport("os", currDir)
-
-		//Edit Json
-
-		cliCmd, err := exec.Command("cp", Concat("../", file, ".json"), Concat(currDir, "/")).Output()
-		if err != nil {
-			fmt.Println(string(cliCmd))
-			return err
-		}
-
-	} else {
-		//Edit Import
-		filePath := Concat(os.Getenv("GOPATH"), "/pkg/mod/", getTruePath(currDir, "github.com/project-flogo/core"), "/examples/engine/imports.go")
-
-		byteArray, err := ioutil.ReadFile(filePath)
-
-		if err != nil {
-			return err
-		}
-
-		err = ioutil.WriteFile(Concat(currDir, "/src/imports.go"), byteArray, 0644)
-		if err != nil {
-			return err
-		}
-
-		//Edit Json
-		filePath = Concat(os.Getenv("GOPATH"), "/pkg/mod/", getTruePath(currDir, "github.com/project-flogo/core"), "/examples/engine/flogo.json")
-
-		byteArray, err = ioutil.ReadFile(filePath)
-
-		_, err = os.Create(Concat(currDir, "/flogo.json"))
-
-		if err != nil {
-			return err
-		}
-		err = ioutil.WriteFile(Concat(currDir, "/flogo.json"), byteArray, 0644)
-		if err != nil {
-			return err
-		}
-	}
-
-	//Edit main
-
-	filePath := Concat(os.Getenv("GOPATH"), "/pkg/mod/", getTruePath(currDir, "github.com/project-flogo/core"), "/examples/engine/main.go")
-
-	byteArray, err := ioutil.ReadFile(filePath)
-
-	if err != nil {
-		return err
-	}
-	err = ioutil.WriteFile(Concat(currDir, "/src/main.go"), byteArray, 0644)
+// importDependencies import all dependencies
+func importDependencies(project common.AppProject) error {
+	imports, err := util.GetImports(filepath.Join(project.Dir(), fileFlogoJson))
 	if err != nil {
 		return err
 	}
 
-	//Edit Mod
-	f, err := os.OpenFile(Concat(currDir, "/src/go.mod"), os.O_APPEND|os.O_WRONLY, 0600)
-	if err != nil {
-		return err
+	project.AddImports(imports...)
+
+	legacySupportRequired := false
+	for _, imp := range imports {
+
+		path, err := project.GetPath(imp)
+		if err != nil {
+			return err
+		}
+
+		desc, err := util.GetContribDescriptor(path)
+
+		if desc != nil {
+			instStr := fmt.Sprintf("Installed %s:", desc.GetContribType())
+			fmt.Printf("%-20s %s\n", instStr, imp)
+		}
+
+		legacy, err := IsLegacySupportRequired(desc,  path, imp, true)
+		if err != nil {
+			return err
+		}
+		if legacy {
+			legacySupportRequired = true
+		}
 	}
 
-	defer f.Close()
-
-	if _, err = f.WriteString("\n replace github.com/Sirupsen/logrus v1.1.0 => github.com/sirupsen/logrus v1.1.0 \n replace github.com/TIBCOSoftware/flogo-lib v0.5.6 => github.com/TIBCOSoftware/flogo-lib v0.5.7-0.20181009194308-1fe2a7011501 \n"); err != nil {
-		return err
+	if legacySupportRequired {
+		InstallLegacySupport(project)
 	}
+
 	return nil
+}
+
+func createMain(dm util.DepManager, appDir string) error {
+
+	corePath, err := dm.GetPath(flogoCoreRepo)
+	if err != nil {
+		return err
+	}
+
+	bytes, err := ioutil.ReadFile(filepath.Join(corePath, fileSampleEngineMain))
+	if err != nil {
+		return err
+	}
+
+	err = ioutil.WriteFile(filepath.Join(appDir, dirSrc, fileMainGo), bytes, 0644)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func getAndUpdateAppJson(dm util.DepManager, appName, appJson string) (string, error) {
+
+	if len(appJson) == 0 {
+
+		// appJson wasn't provided, so lets grab the example
+		corePath, err := dm.GetPath(flogoCoreRepo)
+		if err != nil {
+			return "", err
+		}
+
+		bytes, err := ioutil.ReadFile(filepath.Join(corePath, fileSampleFlogoJson))
+		if err != nil {
+			return "", err
+		}
+
+		appJson = string(bytes)
+	}
+
+	descriptor, err := util.ParseAppDescriptor(appJson)
+	if err != nil {
+		return "", err
+	}
+
+	if appName != "" {
+		// override the application name
+
+		altJson := strings.Replace(appJson, `"`+descriptor.Name+`"`, `"`+appName+`"`, 1)
+		altDescriptor, err := util.ParseAppDescriptor(altJson)
+
+		//see if we can get away with simple replace so we don't reorder the existing json
+		if err == nil && altDescriptor.Name == appName {
+			appJson = altJson
+		} else {
+			//simple replace didn't work so we have to unmarshal & re-marshal the supplied json
+			var appObj map[string]interface{}
+			err := json.Unmarshal([]byte(appJson), &appObj)
+			if err != nil {
+				return "", err
+			}
+
+			appObj["name"] = appName
+
+			updApp, err := json.MarshalIndent(appObj, "", "  ")
+			if err != nil {
+				return "", err
+			}
+			appJson = string(updApp)
+		}
+
+		descriptor.Name = appName
+	} else {
+		appName = descriptor.Name
+	}
+
+	return appJson, nil
+}
+
+func getAppName(appName, appJson string) (string, error) {
+
+	if appJson != "" && appName == "" {
+		descriptor, err := util.ParseAppDescriptor(appJson)
+		if err != nil {
+			return "", err
+		}
+
+		return descriptor.Name, nil
+	}
+
+	return appName, nil
 }

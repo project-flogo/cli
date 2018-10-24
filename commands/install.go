@@ -1,28 +1,21 @@
 package commands
 
 import (
-	"fmt"
-	"os"
-
 	"github.com/project-flogo/cli/api"
+	"github.com/project-flogo/cli/common"
 	"github.com/spf13/cobra"
 )
 
 var installCmd = &cobra.Command{
-	Use:   "install",
-	Short: "Install the version module",
-	Long:  `All software has versions. This is Hugo's`,
+	Use:   "install [flags] <contribution>",
+	Short: "install a flogo contribution",
+	Long:  "Installs a flogo contribution",
+	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		if api.CheckCurrDir() {
-			currDir, _ := os.Getwd()
-			api.InstallPackage(os.Args[2], currDir)
-		} else {
-			fmt.Println("Error in detecting app")
-		}
-
+		api.InstallPackage(common.CurrentProject(), args[0])
 	},
 }
 
 func init() {
-	RootCmd.AddCommand(installCmd)
+	rootCmd.AddCommand(installCmd)
 }

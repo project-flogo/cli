@@ -2,113 +2,137 @@ package api
 
 //Legacy Helper Functions
 import (
-	"bufio"
-	"bytes"
 	"fmt"
+	"github.com/project-flogo/cli/common"
+	"github.com/project-flogo/cli/util"
+	"io"
 	"io/ioutil"
-	"log"
 	"os"
-	"os/exec"
+	"path/filepath"
 	"strings"
+	"text/template"
 )
 
-var legacySupport bool
+const (
+	pkgLegacySupport = "github.com/project-flogo/legacybridge"
+)
 
-//Check the current module downloaded for refs,
-//If present we need to download legacybridge.
+func IsLegacySupportRequired(desc *util.FlogoContribDescriptor, path, pkg string, genMetadata bool) (bool, error) {
 
-func CheckforLegacySupport(args string) bool {
-
-	path := os.Getenv("GOPATH")
-	currDir, _ := os.Getwd()
-	truePath := getTruePath(currDir, args)
-	dirPath := Concat(path, "/pkg/mod/", truePath)
-	_, err := os.Stat(dirPath)
-
-	if os.IsNotExist(err) {
-
-		tag := strings.Split(strings.Split(truePath, "/")[2], "@")[1]
-
-		for i := 3; os.IsNotExist(err); i++ {
-
-			elements := strings.Split(args, "/")
-
-			elements[i] = Concat(elements[i], "@", tag)
-
-			tempPath := strings.Join(elements, "/")
-			dirPath = Concat(path, "/pkg/mod/", tempPath)
-
-			_, err = os.Stat(dirPath)
-
-		}
-	}
-
-	files, err := ioutil.ReadDir(dirPath)
-	for _, f := range files {
-		if strings.Contains(f.Name(), ".json") {
-
-			listsOfRefs := GetRefsFromFile(Concat(dirPath, "/", f.Name()))
-			if len(listsOfRefs) == 1 {
-				return true
-			}
-			return false
-		}
-	}
-	return false
-}
-
-//True Path becase the packages are stored in the version format and we need to get the version
-//in order to navigate to that path.
-func getTruePath(path string, pkg string) string {
-
-	os.Chdir(Concat(path, "/src"))
-	cliCmd, err := exec.Command("go", "mod", "tidy").Output()
-	os.Chdir(path)
-
-	fmt.Println("Opening go.mod")
-	file, err := os.Open(Concat(path, "/src/go.mod"))
-
-	if err != nil {
-		fmt.Println(string(cliCmd))
-		fmt.Println(err)
-	}
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		line := scanner.Text()
-		//fmt.Println(line)
-		modName := strings.Split(strings.TrimSpace(line), " ")
-
-		if strings.Contains(pkg, modName[0]) && len(modName) != 1 {
-			tempPath := strings.Split(pkg, "/")
-			tempPath = makeItLowerCase(tempPath)
-			tempPath[2] = Concat(tempPath[2], "@", modName[1])
-			return strings.Join(tempPath, "/")
-		}
-	}
-	return ""
-}
-
-//This function converts capotal letters in package name
-// to !(smallercase). Eg C => !c . As this is the way
-// go.mod saves every repository in the $GOPATH/pkg/mod.
-func makeItLowerCase(s []string) []string {
-	result := make([]string, len(s))
-	for i := 0; i < len(s); i++ {
-		var b bytes.Buffer
-		for _, c := range s[i] {
-			if c >= 65 && c <= 90 {
-				b.WriteRune(33)
-				b.WriteRune(c + 32)
-			} else {
-				b.WriteRune(c)
+	if desc != nil && desc.Ref != "" {
+		if genMetadata {
+			err := createLegacyMetadata(path, desc.GetContribType(), pkg)
+			if err != nil {
+				return false, err
 			}
 		}
-		result[i] = b.String()
+
+		return true, nil
 	}
-	return result
+
+	return false, nil
+}
+
+func InstallLegacySupport(project common.AppProject) error {
+	err := project.AddImports(pkgLegacySupport)
+	if err == nil {
+		fmt.Println("Installed Legacy Support")
+	}
+	return err
+}
+
+func createLegacyMetadata(path, contribType, contribPkg string) error {
+
+	var mdGoFilePath string
+
+	tplMetadata := ""
+
+	switch contribType {
+	case "action.json":
+		//ignore
+		return nil
+	case "trigger.json":
+		fmt.Printf("Generating metadata for legacy trigger: %s\n", contribPkg)
+		mdGoFilePath = filepath.Join(path, "trigger_metadata.go")
+		tplMetadata = tplTriggerMetadataGoFile
+	case "activity.json":
+		fmt.Printf("Generating metadata for legacy actvity: %s\n", contribPkg)
+		mdGoFilePath = filepath.Join(path, "activity_metadata.go")
+		tplMetadata = tplActivityMetadataGoFile
+	default:
+		return nil
+	}
+
+	mdFilePath := filepath.Join(path, contribType)
+	pkg := filepath.Base(path)
+
+	raw, err := ioutil.ReadFile(mdFilePath)
+	if err != nil {
+		return err
+	}
+
+	info := &struct {
+		Package      string
+		MetadataJSON string
+	}{
+		Package:      pkg,
+		MetadataJSON: string(raw),
+	}
+
+	err = os.Chmod(path, 0777)
+	if err != nil {
+		return err
+	}
+	defer os.Chmod(path, 0555)
+
+	f, err := os.Create(mdGoFilePath)
+	if err != nil {
+		return err
+	}
+	RenderTemplate(f, tplMetadata, info)
+	f.Close()
+
+	return nil
+}
+
+var tplActivityMetadataGoFile = `package {{.Package}}
+
+import (
+	"github.com/project-flogo/legacybridge"
+	"github.com/TIBCOSoftware/flogo-lib/core/activity"
+)
+
+var jsonMetadata = ` + "`{{.MetadataJSON}}`" + `
+
+// init create & register activity
+func init() {
+	md := activity.NewMetadata(jsonMetadata)
+	legacybridge.RegisterLegacyActivity(NewActivity(md))
+}
+`
+
+var tplTriggerMetadataGoFile = `package {{.Package}}
+
+import (
+	"github.com/project-flogo/legacybridge"
+	"github.com/TIBCOSoftware/flogo-lib/core/trigger"
+)
+
+var jsonMetadata = ` + "`{{.MetadataJSON}}`" + `
+
+// init create & register trigger factory
+func init() {
+	md := trigger.NewMetadata(jsonMetadata)
+	legacybridge.RegisterLegacyTriggerFactory(md.ID, NewFactory(md))
+}
+`
+
+//RenderTemplate renders the specified template
+func RenderTemplate(w io.Writer, text string, data interface{}) {
+	t := template.New("top")
+	t.Funcs(template.FuncMap{"trim": strings.TrimSpace})
+	template.Must(t.Parse(text))
+	if err := t.Execute(w, data); err != nil {
+		panic(err)
+	}
 }
