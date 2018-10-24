@@ -1,34 +1,31 @@
 package api
 
 import (
-	"fmt"
+	"github.com/project-flogo/cli/common"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"runtime"
+
+	"github.com/project-flogo/cli/util"
 )
 
-func BuildProject() {
-	if CheckCurrDir() {
-		path, _ := os.Getwd()
-		//Move to the src/ dir in the App.
-		os.Chdir(Concat(path, "/src"))
-		cliCmd, err := exec.Command("go", "build").CombinedOutput()
-		if err != nil {
-			fmt.Println(string(cliCmd))
-		}
-		die(err)
-		_, err = exec.Command("cp", "main", "../bin/").Output()
-		die(err)
-		//Reset the Dir.
-		os.Chdir(path)
+func BuildProject(project common.AppProject) error {
+
+	err := util.ExecCmd(exec.Command("go", "build"), project.SrcDir())
+	if err != nil {
+		return err
 	}
-}
 
-func CheckCurrDir() bool {
-	currDir, _ := os.Getwd()
+	if runtime.GOOS == "windows" {
+		err = os.Rename(filepath.Join(project.SrcDir(), "main.exe"), project.Executable())
+	} else {
+		err = os.Rename(filepath.Join(project.SrcDir(), "main"), project.Executable())
+	}
 
-	_, err := os.Stat(Concat(currDir, "/src/main.go"))
-	_, err1 := os.Stat(Concat(currDir, "/src/imports.go"))
-	_, err2 := os.Stat(Concat(currDir, "/src/go.mod"))
+	if err != nil {
+		return err
+	}
 
-	return !(os.IsNotExist(err) && os.IsNotExist(err1) && os.IsNotExist(err2))
+	return nil
 }

@@ -1,20 +1,29 @@
 package commands
 
 import (
+	"fmt"
+	"github.com/project-flogo/cli/common"
+	"os"
+
 	"github.com/project-flogo/cli/api"
 	"github.com/spf13/cobra"
 )
 
+func init() {
+	rootCmd.AddCommand(buildCmd)
+}
+
 //Build the project.
 var buildCmd = &cobra.Command{
 	Use:   "build",
-	Short: "Build the App module",
-	Long:  `All software has versions. This is Hugo's`,
+	Short: "build the flogo application",
+	Long:  `Build the flogo application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		api.BuildProject()
-	},
-}
+		err := api.BuildProject(common.CurrentProject())
 
-func init() {
-	RootCmd.AddCommand(buildCmd)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			os.Exit(1)
+		}
+	},
 }

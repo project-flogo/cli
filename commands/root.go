@@ -2,51 +2,80 @@ package commands
 
 import (
 	"fmt"
+	"github.com/project-flogo/cli/api"
+	"github.com/project-flogo/cli/common"
 	"os"
-
-	"github.com/project-flogo/cli/registry"
 
 	"github.com/spf13/cobra"
 )
 
+var verbose bool
+
 //Root command
-var RootCmd = &cobra.Command{
-	Use:   "Flogo Cli",
-	Short: "Flogo Cli lets you work with Flogo",
-	Long:  `Flogo Cli is great! `,
+var rootCmd = &cobra.Command{
+	Use:   "flogo [flags] [command]",
+	Short: "flogo cli",
+	Long:  `flogo command line interface for flogo applications`,
+	//Args: cobra.MinimumNArgs(1),
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		api.SetVerbose(verbose)
+		common.SetVerbose(verbose)
+
+		builtIn := cmd.Name() == "help" || cmd.Name() == "version"
+
+		if len(os.Args) > 1 && !builtIn {
+			currentDir, err := os.Getwd()
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "error - unable to determine working directory: %s\n", err)
+				os.Exit(1)
+			}
+			appProject := api.NewAppProject(currentDir)
+
+			err = appProject.Validate()
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "error: %v\n", err)
+				os.Exit(1)
+			}
+
+			common.SetCurrentProject(appProject)
+		}
+	},
 	Run: func(cmd *cobra.Command, args []string) {
 
-		fmt.Println("Welcome to Flogo")
-
-		//fmt.Println("Hugo Static Site Generator v0.9 -- HEAD")
+		if len(args) == 0 {
+			cmd.Help()
+			os.Exit(0)
+		}
 	},
 }
 
 func Initialize() {
+	rootCmd.PersistentFlags().BoolVar(&verbose, "verbose", false, "verbose output")
+
 	//Add the current main commands
-	RootCmd.AddCommand(versionCmd)
+	rootCmd.AddCommand(versionCmd)
 
 	//Get the list of commands from the registry of commands and add.
-	commandList := registry.GetCommands()
+	commandList := common.GetPlugins()
 
 	for _, command := range commandList {
 
-		RootCmd.AddCommand(command)
+		rootCmd.AddCommand(command)
 	}
 }
 
 var versionCmd = &cobra.Command{
 	Use:   "version",
-	Short: "Print the version number of Flogo Cli",
-	Long:  `Flogo Version`,
+	Short: "displays the version of flogo cli",
+	Long:  `Get the current version number of the cli.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("Flogo CLi version v0.0.1")
+		fmt.Println("flogo cli version 0.0.1")
 	},
 }
 
 func Execute() {
 
-	if err := RootCmd.Execute(); err != nil {
+	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
