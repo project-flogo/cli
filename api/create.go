@@ -3,12 +3,13 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/project-flogo/cli/common"
-	"github.com/project-flogo/cli/util"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/project-flogo/cli/common"
+	"github.com/project-flogo/cli/util"
 )
 
 var fileSampleFlogoJson = filepath.Join("examples", "engine", "flogo.json")
@@ -189,7 +190,7 @@ func importDependencies(project common.AppProject) error {
 			fmt.Printf("%-20s %s\n", instStr, imp)
 		}
 
-		legacy, err := IsLegacySupportRequired(desc,  path, imp, true)
+		legacy, err := IsLegacySupportRequired(desc, path, imp, true)
 		if err != nil {
 			return err
 		}

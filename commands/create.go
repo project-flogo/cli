@@ -19,6 +19,8 @@ var CreateCmd = &cobra.Command{
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {},
 	Run: func(cmd *cobra.Command, args []string) {
 
+		api.SetVerbose(verbose)
+
 		appName := ""
 		if len(args) > 0 {
 			appName = args[0]
@@ -26,13 +28,13 @@ var CreateCmd = &cobra.Command{
 
 		currentDir, err := os.Getwd()
 		if err != nil {
-			fmt.Println("unable to determine working directory")
+			fmt.Fprintf(os.Stderr, "Error: unable to determine working directory - %v\n", err)
 			os.Exit(1)
 		}
 
 		err = api.CreateProject(currentDir, appName, flogoJsonPath, coreVersion)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
 		}
 	},

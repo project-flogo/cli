@@ -2,26 +2,33 @@ package commands
 
 import (
 	"fmt"
-	"github.com/project-flogo/cli/api"
-	"github.com/project-flogo/cli/common"
 	"os"
 
+	"github.com/project-flogo/cli/api"
+	"github.com/project-flogo/cli/common"
 	"github.com/spf13/cobra"
+)
+
+const (
+	Version    = "0.0.1"
+	VersionTpl = `{{with .Name}}{{printf "%s " .}}{{end}}{{printf "cli version %s" .Version}}
+`
 )
 
 var verbose bool
 
 //Root command
 var rootCmd = &cobra.Command{
-	Use:   "flogo [flags] [command]",
-	Short: "flogo cli",
-	Long:  `flogo command line interface for flogo applications`,
-	//Args: cobra.MinimumNArgs(1),
+	Use:     "flogo [flags] [command]",
+	Short:   "flogo cli",
+	Long:    `flogo command line interface for flogo applications`,
+	Version: Version,
+
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		api.SetVerbose(verbose)
 		common.SetVerbose(verbose)
 
-		builtIn := cmd.Name() == "help" || cmd.Name() == "version" 
+		builtIn := cmd.Name() == "help" || cmd.Name() == "version"
 
 		if len(os.Args) > 1 && !builtIn {
 			currentDir, err := os.Getwd()
@@ -40,20 +47,12 @@ var rootCmd = &cobra.Command{
 			common.SetCurrentProject(appProject)
 		}
 	},
-	Run: func(cmd *cobra.Command, args []string) {
-
-		if len(args) == 0 {
-			cmd.Help()
-			os.Exit(0)
-		}
-	},
 }
 
 func Initialize() {
 	rootCmd.PersistentFlags().BoolVar(&verbose, "verbose", false, "verbose output")
 
-	//Add the current main commands
-	rootCmd.AddCommand(versionCmd)
+	rootCmd.SetVersionTemplate(VersionTpl)
 
 	//Get the list of commands from the registry of commands and add.
 	commandList := common.GetPlugins()
@@ -64,19 +63,10 @@ func Initialize() {
 	}
 }
 
-var versionCmd = &cobra.Command{
-	Use:   "version",
-	Short: "displays the version of flogo cli",
-	Long:  `Get the current version number of the cli.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("flogo cli version 0.0.1")
-	},
-}
-
 func Execute() {
 
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
 }

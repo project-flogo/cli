@@ -2,14 +2,15 @@ package api
 
 import (
 	"fmt"
-	"github.com/project-flogo/cli/common"
-	"github.com/project-flogo/cli/util"
 	"go/parser"
 	"go/printer"
 	"go/token"
 	"os"
 	"path/filepath"
 	"runtime"
+
+	"github.com/project-flogo/cli/common"
+	"github.com/project-flogo/cli/util"
 )
 
 const (
