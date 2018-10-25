@@ -21,7 +21,7 @@ var rootCmd = &cobra.Command{
 		api.SetVerbose(verbose)
 		common.SetVerbose(verbose)
 
-		builtIn := cmd.Name() == "help" || cmd.Name() == "version"
+		builtIn := cmd.Name() == "help" || cmd.Name() == "version" 
 
 		if len(os.Args) > 1 && !builtIn {
 			currentDir, err := os.Getwd()
