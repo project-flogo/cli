@@ -6,7 +6,6 @@ import (
 
 	"github.com/project-flogo/cli/api"
 	"github.com/project-flogo/cli/common"
-
 	"github.com/spf13/cobra"
 )
 
@@ -15,15 +14,13 @@ func init() {
 }
 
 var updateCmd = &cobra.Command{
-	Use:   "update",
-	Short: "update the project packages",
-	Long:  `update the project packages`,
+	Use:   "update [flags] <package>",
+	Short: "update a project package",
+	Long:  `Updates a package in the project`,
+	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(os.Args) < 3 {
-			fmt.Println("Enter package name")
-			os.Exit(1)
-		}
-		err := api.UpdatePkg(common.CurrentProject(), os.Args[len(os.Args)-1])
+
+		err := api.UpdatePkg(common.CurrentProject(), args[0])
 
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "error: %v\n", err)

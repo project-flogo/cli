@@ -72,7 +72,6 @@ func GetContribDescriptor(path string) (*FlogoContribDescriptor, error) {
 	return nil, fmt.Errorf("descriptor not found for in: %s", path)
 }
 
-
 // ParseAppDescriptor parse the application descriptor
 func GetImports(appJsonPath string) ([]string, error) {
 

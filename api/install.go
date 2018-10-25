@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+
 	"github.com/project-flogo/cli/common"
 	"github.com/project-flogo/cli/util"
 )

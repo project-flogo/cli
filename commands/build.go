@@ -2,10 +2,10 @@ package commands
 
 import (
 	"fmt"
-	"github.com/project-flogo/cli/common"
 	"os"
 
 	"github.com/project-flogo/cli/api"
+	"github.com/project-flogo/cli/common"
 	"github.com/spf13/cobra"
 )
 
@@ -20,7 +20,6 @@ var buildCmd = &cobra.Command{
 	Long:  `Build the flogo application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		err := api.BuildProject(common.CurrentProject())
-
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "error: %v\n", err)
 			os.Exit(1)

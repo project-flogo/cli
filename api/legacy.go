@@ -3,14 +3,15 @@ package api
 //Legacy Helper Functions
 import (
 	"fmt"
-	"github.com/project-flogo/cli/common"
-	"github.com/project-flogo/cli/util"
 	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 	"text/template"
+
+	"github.com/project-flogo/cli/common"
+	"github.com/project-flogo/cli/util"
 )
 
 const (

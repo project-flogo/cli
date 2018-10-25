@@ -1,12 +1,12 @@
 package api
 
 import (
-	"github.com/project-flogo/cli/common"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 
+	"github.com/project-flogo/cli/common"
 	"github.com/project-flogo/cli/util"
 )
 
