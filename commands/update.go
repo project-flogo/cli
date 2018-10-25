@@ -2,36 +2,32 @@ package commands
 
 import (
 	"fmt"
-	"log"
 	"os"
-	"os/exec"
 
 	"github.com/project-flogo/cli/api"
+	"github.com/project-flogo/cli/common"
+
 	"github.com/spf13/cobra"
 )
 
-var UpdateCmd = &cobra.Command{
-	Use:   "update",
-	Short: "Flogo Cli also lets you update your packages ",
-	Long:  `Flogo Cli update is great! `,
-	Run: func(cmd *cobra.Command, args []string) {
+func init() {
+	rootCmd.AddCommand(updateCmd)
+}
 
-		if len(os.Args) == 2 {
+var updateCmd = &cobra.Command{
+	Use:   "update",
+	Short: "update the project packages",
+	Long:  `update the project packages`,
+	Run: func(cmd *cobra.Command, args []string) {
+		if len(os.Args) < 3 {
 			fmt.Println("Enter package name")
 			os.Exit(1)
-		} else {
-			path := os.Getenv("GOPATH")
-			os.Chdir(api.Concat(path, "/src/github.com/project-flogo/cli"))
-			cliCmd, err := exec.Command("go", "get", os.Args[2]).CombinedOutput()
-			if err != nil {
-
-				fmt.Println(string(cliCmd))
-
-				log.Fatal(err)
-
-			}
-			api.BuildModule(os.Args[2], true)
 		}
+		err := api.UpdatePkg(common.CurrentProject(), os.Args[len(os.Args)-1])
 
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			os.Exit(1)
+		}
 	},
 }
