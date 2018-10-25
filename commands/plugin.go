@@ -19,9 +19,9 @@ const (
 )
 
 var (
-	cliPath      = filepath.Join("src", "github.com", "project-flogo", "cli", "cmd", "flogo")
-	goPath       = os.Getenv("GOPATH")
-	cliBuildPath = filepath.Join(goPath, cliPath)
+	goPath     = os.Getenv("GOPATH")
+	cliPath    = filepath.Join(goPath, filepath.Join("src", "github.com", "project-flogo", "cli"))
+	cliCmdPath = filepath.Join(cliPath, "cmd", "flogo")
 )
 
 var pluginCmd = &cobra.Command{
@@ -39,6 +39,14 @@ var pluginInstall = &cobra.Command{
 	Long:  "Installs a cli plugin",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
+
+		err := useBuildGoMod()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
+
+		defer restoreGoMod()
 
 		pluginPkg := args[0]
 
@@ -80,9 +88,17 @@ var pluginUpdate = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 
+		err := useBuildGoMod()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
+
+		defer restoreGoMod()
+
 		plugin := args[0]
 		fmt.Printf("Updating plugin: %s\n", plugin)
-		err := util.ExecCmd(exec.Command("go", "get", "-u", plugin), cliBuildPath)
+		err = util.ExecCmd(exec.Command("go", "get", "-u", plugin), cliCmdPath)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
@@ -104,6 +120,49 @@ func init() {
 	pluginCmd.AddCommand(pluginUpdate)
 }
 
+func useBuildGoMod() error {
+
+	baseGoMod := filepath.Join(cliPath, "go.mod")
+	bakGoMod := filepath.Join(cliPath, "go.mod.bak")
+	buildGoMod := filepath.Join(cliPath, "go.mod.build")
+
+	if _, err := os.Stat(buildGoMod); err != nil {
+
+		if verbose {
+			fmt.Printf("Creating plugin build go.mod")
+		}
+
+		err := util.CopyFile(baseGoMod, buildGoMod)
+		if err != nil {
+			return err
+		}
+	}
+
+	if verbose {
+		fmt.Printf("Switching to plugin build go.mod")
+	}
+
+	os.Rename(baseGoMod, bakGoMod)
+	os.Rename(buildGoMod, baseGoMod)
+
+	return nil
+}
+
+func restoreGoMod() error {
+
+	if verbose {
+		fmt.Printf("Restoring default cli go.mod")
+	}
+	baseGoMod := filepath.Join(cliPath, "go.mod")
+	bakGoMod := filepath.Join(cliPath, "go.mod.bak")
+	buildGoMod := filepath.Join(cliPath, "go.mod.build")
+
+	os.Rename(baseGoMod, buildGoMod)
+	os.Rename(bakGoMod, baseGoMod)
+
+	return nil
+}
+
 func addPlugin(pluginPkg string) (bool, error) {
 
 	added, err := modifyPluginImports(pluginPkg, false)
@@ -113,7 +172,7 @@ func addPlugin(pluginPkg string) (bool, error) {
 
 	if added {
 		//Download all the modules. This is just to ensure all packages are downloaded before go build.
-		err := util.ExecCmd(exec.Command("go", "mod", "download"), cliBuildPath)
+		err := util.ExecCmd(exec.Command("go", "mod", "download"), cliCmdPath)
 		if err != nil {
 			modifyPluginImports(pluginPkg, true)
 			return false, err
@@ -135,13 +194,13 @@ func updateCLI() error {
 		os.Rename(exe, backupExe)
 	}
 
-	err = util.ExecCmd(exec.Command("go", "build"), cliBuildPath)
+	err = util.ExecCmd(exec.Command("go", "build"), cliCmdPath)
 	if err != nil {
 		os.Rename(backupExe, exe)
 		return err
 	}
 
-	os.Rename(filepath.Join(cliBuildPath, "flogo"), exe)
+	os.Rename(filepath.Join(cliCmdPath, "flogo"), exe)
 	os.Remove(backupExe)
 
 	return nil
@@ -149,7 +208,7 @@ func updateCLI() error {
 
 func modifyPluginImports(pkg string, remove bool) (bool, error) {
 
-	importsFile := filepath.Join(cliBuildPath, fileImportsGo)
+	importsFile := filepath.Join(cliCmdPath, fileImportsGo)
 
 	fset := token.NewFileSet()
 	file, err := parser.ParseFile(fset, importsFile, nil, parser.ImportsOnly)

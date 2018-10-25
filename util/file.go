@@ -36,3 +36,17 @@ func LoadLocalFile(path string) (string, error) {
 
 	return string(buf), nil
 }
+
+func CopyFile(srcFile, destFile string) error {
+	input, err := ioutil.ReadFile(srcFile)
+	if err != nil {
+		return err
+	}
+
+	err = ioutil.WriteFile(destFile, input, 0644)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
