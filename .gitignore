@@ -25,3 +25,5 @@
 # cli binary
 flogo
 
+go.sum
+
