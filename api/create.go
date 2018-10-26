@@ -26,12 +26,12 @@ func CreateProject(basePath, appName, appCfgPath, coreVersion string) error {
 
 			appJson, err = util.LoadRemoteFile(appCfgPath)
 			if err != nil {
-				return fmt.Errorf("error loading remote app file '%s' - %s", appCfgPath, err.Error())
+				return fmt.Errorf("unable to load remote app file '%s' - %s", appCfgPath, err.Error())
 			}
 		} else {
 			appJson, err = util.LoadLocalFile(appCfgPath)
 			if err != nil {
-				return fmt.Errorf("error loading app file file '%s' - %s", appCfgPath, err.Error())
+				return fmt.Errorf("unable to load app file '%s' - %s", appCfgPath, err.Error())
 			}
 		}
 	} else {
@@ -173,7 +173,7 @@ func importDependencies(project common.AppProject) error {
 		return err
 	}
 
-	project.AddImports(imports...)
+	project.AddImports(true, imports...)
 
 	legacySupportRequired := false
 	for _, imp := range imports {

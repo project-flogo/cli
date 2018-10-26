@@ -176,7 +176,7 @@ func ReadContribDescriptor(descriptorFile string) (*FlogoContribDescriptor, erro
 
 	err = json.Unmarshal(bytes, descriptor)
 	if err != nil {
-		return nil, fmt.Errorf("error parsing descriptor '%s': %s", descriptorFile, err.Error())
+		return nil, fmt.Errorf("failed to parse descriptor '%s': %s", descriptorFile, err.Error())
 	}
 
 	return descriptor, nil
