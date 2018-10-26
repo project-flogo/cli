@@ -35,7 +35,7 @@ func IsLegacySupportRequired(desc *util.FlogoContribDescriptor, path, pkg string
 }
 
 func InstallLegacySupport(project common.AppProject) error {
-	err := project.AddImports(pkgLegacySupport)
+	err := project.AddImports(false, pkgLegacySupport)
 	if err == nil {
 		fmt.Println("Installed Legacy Support")
 	}

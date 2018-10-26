@@ -101,7 +101,7 @@ func (p *appProjectImpl) GetPath(pkg string) (string, error) {
 	return p.dm.GetPath(pkg)
 }
 
-func (p *appProjectImpl) AddImports(imports ...string) error {
+func (p *appProjectImpl) AddImports(ignoreError bool, imports ...string) error {
 
 	importsFile := filepath.Join(p.SrcDir(), fileImportsGo)
 
@@ -112,11 +112,15 @@ func (p *appProjectImpl) AddImports(imports ...string) error {
 	}
 
 	for _, impPath := range imports {
-		util.AddImport(fset, file, impPath)
 		err := p.DepManager().AddDependency(impPath, "", true)
 		if err != nil {
+			if ignoreError {
+				fmt.Printf("Warning: unable to install %s\n", impPath)
+				continue
+			}
 			return err
 		}
+		util.AddImport(fset, file, impPath)
 	}
 
 	f, err := os.Create(importsFile)

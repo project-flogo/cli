@@ -9,7 +9,10 @@ import (
 
 func InstallPackage(project common.AppProject, pkg string) error {
 
-	project.AddImports(pkg)
+	err := project.AddImports(false, pkg)
+	if err != nil {
+		return err
+	}
 
 	path, err := project.GetPath(pkg)
 	if err != nil {

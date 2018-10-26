@@ -7,7 +7,7 @@ type AppProject interface {
 	BinDir() string
 	SrcDir() string
 	Executable() string
-	AddImports(imports ...string) error
+	AddImports(ignoreError bool, imports ...string) error
 	RemoveImports(imports ...string) error
 	GetPath(pkg string) (string, error)
 }

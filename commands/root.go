@@ -33,14 +33,14 @@ var rootCmd = &cobra.Command{
 		if len(os.Args) > 1 && !builtIn {
 			currentDir, err := os.Getwd()
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "error - unable to determine working directory: %s\n", err)
+				fmt.Fprintf(os.Stderr, "Error: unable to determine working directory - %s\n", err)
 				os.Exit(1)
 			}
 			appProject := api.NewAppProject(currentDir)
 
 			err = appProject.Validate()
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "error: %v\n", err)
+				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 				os.Exit(1)
 			}
 

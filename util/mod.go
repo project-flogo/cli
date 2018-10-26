@@ -3,6 +3,7 @@ package util
 import (
 	"bufio"
 	"bytes"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -182,17 +183,20 @@ func ExecCmd(cmd *exec.Cmd, workingDir string) error {
 		cmd.Dir = workingDir
 	}
 
+	var out bytes.Buffer
+
 	if verbose {
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 	} else {
 		cmd.Stdout = nil
-		cmd.Stderr = nil
+		cmd.Stderr = &out
 	}
 
 	err := cmd.Run()
-	if err == nil {
-		return err
+
+	if err != nil {
+		return fmt.Errorf(string(out.Bytes()))
 	}
 
 	return nil
