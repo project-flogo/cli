@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -17,14 +18,19 @@ func BuildProject(project common.AppProject) error {
 		return err
 	}
 
+	exe := filepath.Join(project.SrcDir(), "main")
+
 	if runtime.GOOS == "windows" {
-		err = os.Rename(filepath.Join(project.SrcDir(), "main.exe"), project.Executable())
-	} else {
-		err = os.Rename(filepath.Join(project.SrcDir(), "main"), project.Executable())
+		exe = filepath.Join(project.SrcDir(), "main.exe")
 	}
 
-	if err != nil {
-		return err
+	if _, err := os.Stat(exe); err == nil {
+		err = os.Rename(exe, project.Executable())
+		if err != nil {
+			return err
+		}
+	} else {
+		return fmt.Errorf("failed to build application, run with --verbose to see details")
 	}
 
 	return nil
