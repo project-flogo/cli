@@ -33,16 +33,29 @@ func BuildProject(project common.AppProject, options BuildOptions) error {
 
 	useShim := options.Shim != ""
 
-	createEmbeddedAppGoFile(project, options.EmbedConfig)
-	createShimSupportGoFile(project, useShim)
-
-	initMain(project, useShim)
-
-	if useShim {
-		prepareShim(project, options.Shim)
+	err := createEmbeddedAppGoFile(project, options.EmbedConfig || useShim)
+	if err != nil {
+		return err
 	}
 
-	err := util.ExecCmd(exec.Command("go", "build"), project.SrcDir())
+	err = createShimSupportGoFile(project, useShim)
+	if err != nil {
+		return err
+	}
+
+	err = initMain(project, useShim)
+	if err != nil {
+		return err
+	}
+
+	if useShim {
+		err = prepareShim(project, options.Shim)
+		if err != nil {
+			return err
+		}
+	}
+
+	err = util.ExecCmd(exec.Command("go", "build"), project.SrcDir())
 	if err != nil {
 		return err
 	}
@@ -79,16 +92,28 @@ func prepareShim(project common.AppProject, shim string) error {
 		return err
 	}
 
+	err = registerImports(project, descriptor)
+	if err != nil {
+		return err
+	}
+
 	for _, trgCfg := range descriptor.Triggers {
 		if trgCfg.Id == shim {
 
 			ref := trgCfg.Ref
+
+			if trgCfg.Ref == "" {
+				found := false
+				ref, found = GetAliasRef("flogo:trigger", trgCfg.Type)
+				if !found {
+					return fmt.Errorf("unable to determine ref for trigger: %s", trgCfg.Id)
+				}
+			}
+
 			path, err := project.GetPath(ref)
 			if err != nil {
 				return err
 			}
-
-			fmt.Println("Shim File:", filepath.Join(ref, dirShim, fileShimGo))
 
 			shimFilePath := filepath.Join(path, dirShim, fileShimGo)
 
@@ -155,14 +180,15 @@ func createShimSupportGoFile(project common.AppProject, create bool) error {
 				return err
 			}
 		}
-		shimSrcPath := filepath.Join(project.SrcDir(), fileShimSupportGo)
-
-		if _, err := os.Stat(shimSrcPath); err == nil {
-			os.Remove(shimSrcPath)
-			if err != nil {
-				return err
-			}
-		}
+		//
+		//shimSrcPath := filepath.Join(project.SrcDir(), fileShimSupportGo)
+		//
+		//if _, err := os.Stat(shimSrcPath); err == nil {
+		//	os.Remove(shimSrcPath)
+		//	if err != nil {
+		//		return err
+		//	}
+		//}
 		return nil
 	}
 

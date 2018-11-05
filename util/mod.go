@@ -36,52 +36,35 @@ func (m *ModDepManager) Init() error {
 
 func (m *ModDepManager) AddDependency(path, version string, fetch bool) error {
 
-	if len(version) > 1 {
-		if version == "master" {
-			err := ExecCmd(exec.Command("go", "get", path+"@master"), m.srcDir)
-			if err != nil {
-				return err
-			}
+	depVersion := version
 
-		} else {
+	if len(version) == 0 {
+		depVersion = "latest"
+	} else if version != "master" && version[0] != 'v' {
+		depVersion = "v" + version
+	}
 
-			depVersion := version
-			if version[0] != 'v' {
-				depVersion = "v" + version
-			}
+	dep := path + "@" + depVersion
 
-			err := ExecCmd(exec.Command("go", "mod", "edit", "-require", path+"@"+depVersion), m.srcDir)
-			if err != nil {
-				return err
-			}
-
-			if fetch {
-				err := ExecCmd(exec.Command("go", "get", path), m.srcDir)
-				if err != nil {
-					return err
-				}
-			}
+	//note: hack, because go get doesn't add core to go.mod
+	if path == "github.com/project-flogo/core" {
+		err := ExecCmd(exec.Command("go", "mod", "edit", "-require", dep), m.srcDir)
+		if err != nil {
+			return err
 		}
-	} else {
-		//temporary hack for odd mod behavior, not picking up latest
-		if strings.HasPrefix(path, "github.com/TIBCOSoftware/flogo-contrib") {
+	}
 
-			cmd := exec.Command("go", "get", "github.com/TIBCOSoftware/flogo-contrib@v0.5.7-rc1")
-			//cmd.Env = os.Environ()
-			//cmd.Env = append(cmd.Env, "GO111MODULE=auto")
-			err := ExecCmd(cmd, m.srcDir)
-
-			//err = ExecCmd(exec.Command("go", "version"), m.srcDir)
-
-			if err != nil {
-				return err
-			}
-		} else {
-			err := ExecCmd(exec.Command("go", "get", path), m.srcDir)
-			if err != nil {
-				return err
-			}
+	//note: hack, because go get isn't picking up latest
+	if strings.HasPrefix(path, "github.com/TIBCOSoftware/flogo-contrib") {
+		err := ExecCmd(exec.Command("go", "mod", "edit", "-require", "github.com/TIBCOSoftware/flogo-contrib@" + version), m.srcDir)
+		if err != nil {
+			return err
 		}
+	}
+
+	err := ExecCmd(exec.Command("go", "get", dep), m.srcDir)
+	if err != nil {
+		return err
 	}
 
 	return nil

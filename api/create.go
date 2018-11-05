@@ -144,6 +144,8 @@ func setupAppDirectory(dm util.DepManager, appPath, coreVersion string) error {
 		return err
 	}
 
+	fmt.Println("installing core")
+
 	// add & fetch the core library
 	dm.AddDependency(flogoCoreRepo, coreVersion, true)
 
