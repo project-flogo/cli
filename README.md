@@ -93,7 +93,7 @@ package walrus
 
 import (
 	"fmt"
-    "github.com/project-flogo/cli/common" //Import Flogo Cli 
+    	"github.com/project-flogo/cli/common" //Import Flogo Cli 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
