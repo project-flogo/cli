@@ -35,9 +35,13 @@ type FlogoAppDescriptor struct {
 	AppModel    string   `json:"appModel,omitempty"`
 	Imports     []string `json:"imports"`
 
-	//Triggers    []*trigger.Config     `json:"triggers"`
-	//Resources   []*ResourceDescriptor `json:"resources"`
-	//Actions []*ActionDescriptor `json:"actions"`
+	Triggers []*FlogoTriggerConfig `json:"triggers"`
+}
+
+type FlogoTriggerConfig struct {
+	Id   string `json:"id"`
+	Ref  string `json:"ref"`
+	Type string `json:"type"`
 }
 
 // FlogoAppDescriptor is the descriptor for a Flogo application
@@ -47,6 +51,7 @@ type FlogoContribDescriptor struct {
 	Version     string `json:"version"`
 	Description string `json:"description"`
 	Ref         string `json:"ref"`
+	Shim        string `json:"shim"`
 }
 
 func (d *FlogoContribDescriptor) GetContribType() string {

@@ -129,6 +129,8 @@ func (p *appProjectImpl) AddImports(ignoreError bool, imports ...string) error {
 		return err
 	}
 
+	//p.dm.Finalize()
+
 	return nil
 }
 
