@@ -9,13 +9,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var localContrib bool
 var installCmd = &cobra.Command{
 	Use:   "install [flags] <contribution>",
 	Short: "install a flogo contribution",
 	Long:  "Installs a flogo contribution",
-	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		err := api.InstallPackage(common.CurrentProject(), args[0])
+		err := api.InstallPackage(common.CurrentProject(), args, localContrib)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
@@ -24,5 +24,7 @@ var installCmd = &cobra.Command{
 }
 
 func init() {
+	installCmd.Flags().BoolVarP(&localContrib, "localContrib", "l", false, "Specify local Contrib")
 	rootCmd.AddCommand(installCmd)
+
 }

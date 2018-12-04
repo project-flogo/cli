@@ -63,11 +63,11 @@ func getContribType(project common.AppProject, ref string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-
 	var descriptorPath string
 
 	if _, err := os.Stat(filepath.Join(path, fileDescriptorJson)); err == nil {
 		descriptorPath = filepath.Join(path, fileDescriptorJson)
+
 	} else if _, err := os.Stat(filepath.Join(path, "activity.json")); err == nil {
 		descriptorPath = filepath.Join(path, "activity.json")
 	} else if _, err := os.Stat(filepath.Join(path, "trigger.json")); err == nil {
