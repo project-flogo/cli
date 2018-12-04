@@ -1,5 +1,3 @@
-## Installation
-
 ### Prerequisites
 To get started with the Project Flogo cli you'll need 
 * The Go programming language version 1.11 or later 
