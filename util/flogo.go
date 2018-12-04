@@ -12,6 +12,7 @@ import (
 )
 
 var exists = struct{}{}
+var listOfMods []*FlogoContribDescriptor
 
 // ParseAppDescriptor parse the application descriptor
 func ParseAppDescriptor(appJson string) (*FlogoAppDescriptor, error) {
@@ -167,6 +168,7 @@ func getImportsLegacy(appJsonPath string) ([]string, error) {
 }
 
 func ReadContribDescriptor(descriptorFile string) (*FlogoContribDescriptor, error) {
+
 	descriptorJson, err := os.Open(descriptorFile)
 	if err != nil {
 		return nil, err

@@ -9,8 +9,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-
 var buildShim string
+
 var buildOptimize bool
 var buildEmbed bool
 
@@ -28,7 +28,7 @@ var buildCmd = &cobra.Command{
 	Long:  `Build the flogo application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 
-		options := api.BuildOptions{Shim:buildShim, OptimizeImports:buildOptimize, EmbedConfig:buildEmbed}
+		options := api.BuildOptions{Shim: buildShim, OptimizeImports: buildOptimize, EmbedConfig: buildEmbed}
 
 		err := api.BuildProject(common.CurrentProject(), options)
 		if err != nil {

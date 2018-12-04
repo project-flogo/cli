@@ -1,5 +1,3 @@
-## Installation
-
 ### Prerequisites
 To get started with the Project Flogo cli you'll need 
 * The Go programming language version 1.11 or later 
@@ -93,7 +91,7 @@ package walrus
 
 import (
 	"fmt"
-    	"github.com/project-flogo/cli/common" //Import Flogo Cli 
+    "github.com/project-flogo/cli/common" //Import Flogo Cli 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -136,4 +134,3 @@ var sayCmd = &cobra.Command{
 ```
 $ flogo plugin install github.com/skothari-tibco/walrus
 ```
-
