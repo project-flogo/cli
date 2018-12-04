@@ -15,11 +15,23 @@ var installCmd = &cobra.Command{
 	Short: "install a flogo contribution",
 	Long:  "Installs a flogo contribution",
 	Run: func(cmd *cobra.Command, args []string) {
-		err := api.InstallPackage(common.CurrentProject(), args, localContrib)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-			os.Exit(1)
+
+		if localContrib {
+			err := api.InstallLocalPackage(common.CurrentProject(), args)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+				os.Exit(1)
+			}
+		} else {
+			for _, pkg := range args {
+				err := api.InstallPackage(common.CurrentProject(), pkg)
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+					os.Exit(1)
+				}
+			}
 		}
+
 	},
 }
 
