@@ -3,6 +3,7 @@ package api
 import (
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -90,29 +91,32 @@ func (t *TestEnv) cleanup() {
 	os.RemoveAll(t.currentDir)
 }
 
-func TestCmdCreate_noflag(t *testing.T) {
-	t.Log("Testing simple creation of project")
-
+func GetTempDir() string {
 	err := os.Setenv("FLOGO_BUILD_EXPERIMENTAL", "true")
 	if err != nil {
-		t.Fatal(err)
+		log.Fatal(err)
 	}
 	err = os.Setenv("GO111MODULE", "on")
 	if err != nil {
-		t.Fatal(err)
+		log.Fatal(err)
 	}
 	defer os.Unsetenv("FLOGO_BUILD_EXPERIMENTAL")
 
 	tempDir, err := ioutil.TempDir("", "test")
 	if err != nil {
-		t.Fatal(err)
+		log.Fatal(err)
 	}
 	tempDirInfo, err := filepath.EvalSymlinks(tempDir)
 	if err == nil {
 		// Sym link
 		tempDir = tempDirInfo
 	}
+	return tempDir
+}
+func TestCmdCreate_noflag(t *testing.T) {
+	t.Log("Testing simple creation of project")
 
+	tempDir := GetTempDir()
 	testEnv := &TestEnv{currentDir: tempDir}
 
 	defer testEnv.cleanup()
@@ -121,7 +125,7 @@ func TestCmdCreate_noflag(t *testing.T) {
 
 	assert.Equal(t, nil, CreateProject(testEnv.currentDir, "myApp", "", ""))
 
-	_, err = os.Stat(filepath.Join(tempDir, "myApp", "src", "go.mod"))
+	_, err := os.Stat(filepath.Join(tempDir, "myApp", "src", "go.mod"))
 
 	assert.Equal(t, nil, err)
 	_, err = os.Stat(filepath.Join(tempDir, "myApp", "flogo.json"))
@@ -215,7 +219,7 @@ func TestCmdCreate_masterCore(t *testing.T) {
 }
 
 func TestCmdCreate_versionCore(t *testing.T) {
-	t.Log("Testing creation of project when the version of core is provided `v0.9.0-alpha.1`")
+	t.Log("Testing creation of project when the version of core is provided `v0.9.0-alpha.3`")
 	err := os.Setenv("FLOGO_BUILD_EXPERIMENTAL", "true")
 	if err != nil {
 		t.Fatal(err)
@@ -241,7 +245,7 @@ func TestCmdCreate_versionCore(t *testing.T) {
 
 	t.Logf("Current dir '%s'", testEnv.currentDir)
 
-	assert.Equal(t, nil, CreateProject(testEnv.currentDir, "myApp", "", "v0.9.0-alpha.1"))
+	assert.Equal(t, nil, CreateProject(testEnv.currentDir, "myApp", "", "v0.9.0-alpha.3"))
 
 	_, err = os.Stat(filepath.Join(tempDir, "myApp", "src", "go.mod"))
 
@@ -256,5 +260,5 @@ func TestCmdCreate_versionCore(t *testing.T) {
 	data, err1 := ioutil.ReadFile(filepath.Join(tempDir, "myApp", "src", "go.mod"))
 	assert.Equal(t, nil, err1)
 
-	assert.Equal(t, true, strings.Contains(string(data), "v0.9.0-alpha.1"))
+	assert.Equal(t, true, strings.Contains(string(data), "v0.9.0-alpha.3"))
 }

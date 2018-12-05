@@ -1,36 +1,16 @@
 package api
 
 import (
-	"io/ioutil"
-	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestInstallPkg(t *testing.T) {
+func TestInstallLegacyPkg(t *testing.T) {
 	t.Log("Testing installation of package")
 
-	err := os.Setenv("FLOGO_BUILD_EXPERIMENTAL", "true")
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = os.Setenv("GO111MODULE", "on")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.Unsetenv("FLOGO_BUILD_EXPERIMENTAL")
-
-	tempDir, err := ioutil.TempDir("", "test")
-	if err != nil {
-		t.Fatal(err)
-	}
-	tempDirInfo, err := filepath.EvalSymlinks(tempDir)
-	if err == nil {
-		// Sym link
-		tempDir = tempDirInfo
-	}
+	tempDir := GetTempDir()
 
 	testEnv := &TestEnv{currentDir: tempDir}
 
@@ -38,21 +18,71 @@ func TestInstallPkg(t *testing.T) {
 
 	t.Logf("Current dir '%s'", testEnv.currentDir)
 
-	err = CreateProject(testEnv.currentDir, "myApp", "", "")
+	err := CreateProject(testEnv.currentDir, "myApp", "", "")
 
 	assert.Equal(t, nil, err)
 
-	_, err = os.Stat(filepath.Join(tempDir, "myApp", "src", "go.mod"))
-
-	assert.Equal(t, nil, err)
-	_, err = os.Stat(filepath.Join(tempDir, "myApp", "flogo.json"))
-
+	err = InstallPackage(NewAppProject(filepath.Join(testEnv.currentDir, "myApp")), "github.com/TIBCOSoftware/flogo-contrib/activity/log")
 	assert.Equal(t, nil, err)
 
-	_, err = os.Stat(filepath.Join(tempDir, "myApp", "src", "main.go"))
+}
+
+func TestInstallPkg(t *testing.T) {
+	t.Log("Testing installation of package")
+
+	tempDir := GetTempDir()
+
+	testEnv := &TestEnv{currentDir: tempDir}
+
+	defer testEnv.cleanup()
+
+	t.Logf("Current dir '%s'", testEnv.currentDir)
+
+	err := CreateProject(testEnv.currentDir, "myApp", "", "")
+
 	assert.Equal(t, nil, err)
 
-	err = InstallPackage(NewAppProject(testEnv.currentDir), "github.com/TIBCOSoftware/flogo-contrib/activity/log")
+	err = InstallPackage(NewAppProject(filepath.Join(testEnv.currentDir, "myApp")), "github.com/skothari-tibco/csvtimer")
+	assert.Equal(t, nil, err)
+
+}
+
+func TestListPkg(t *testing.T) {
+	t.Log("Testing installation of package")
+
+	tempDir := GetTempDir()
+
+	testEnv := &TestEnv{currentDir: tempDir}
+
+	defer testEnv.cleanup()
+
+	t.Logf("Current dir '%s'", testEnv.currentDir)
+
+	err := CreateProject(testEnv.currentDir, "myApp", "", "")
+
+	assert.Equal(t, nil, err)
+
+	err = ListPackages(NewAppProject(filepath.Join(testEnv.currentDir, "myApp")), true, false)
+	assert.Equal(t, nil, err)
+
+}
+
+func TestListAllPkg(t *testing.T) {
+	t.Log("Testing installation of package")
+
+	tempDir := GetTempDir()
+
+	testEnv := &TestEnv{currentDir: tempDir}
+
+	defer testEnv.cleanup()
+
+	t.Logf("Current dir '%s'", testEnv.currentDir)
+
+	err := CreateProject(testEnv.currentDir, "myApp", "", "")
+
+	assert.Equal(t, nil, err)
+
+	err = ListPackages(NewAppProject(filepath.Join(testEnv.currentDir, "myApp")), true, true)
 	assert.Equal(t, nil, err)
 
 }

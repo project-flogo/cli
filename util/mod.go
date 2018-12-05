@@ -3,8 +3,11 @@ package util
 import (
 	"bufio"
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -43,7 +46,9 @@ func (m *ModDepManager) AddDependency(path, version string, fetch bool) error {
 	depVersion := version
 
 	if len(version) == 0 {
-		depVersion = "latest"
+		//Latest changed to master. Need to clear out in future.
+		//Changed to master due to Issue in flogo-contrib/legacy-support
+		depVersion = "master"
 	} else if version != "master" && version[0] != 'v' {
 		depVersion = "v" + version
 	}
@@ -60,6 +65,7 @@ func (m *ModDepManager) AddDependency(path, version string, fetch bool) error {
 
 	//note: hack, because go get isn't picking up latest
 	if strings.HasPrefix(path, "github.com/TIBCOSoftware/flogo-contrib") {
+		version = getLatestVersion("github.com/TIBCOSoftware/flogo-contrib")
 		err := ExecCmd(exec.Command("go", "mod", "edit", "-require", "github.com/TIBCOSoftware/flogo-contrib@"+version), m.srcDir)
 		if err != nil {
 			return err
@@ -68,6 +74,7 @@ func (m *ModDepManager) AddDependency(path, version string, fetch bool) error {
 
 	err := ExecCmd(exec.Command("go", "get", dep), m.srcDir)
 	if err != nil {
+		fmt.Println("Error in installing", dep)
 		return err
 	}
 
@@ -239,5 +246,30 @@ func (m *ModDepManager) InstallLocalPkg(pkg1 string, pkg2 string) {
 	if _, err = f.WriteString(fmt.Sprintf("replace %v => %v", pkg1, pkg2)); err != nil {
 		panic(err)
 	}
+
+}
+
+type Resp struct {
+	Name string `json:"name"`
+}
+
+func getLatestVersion(path string) string {
+
+	//To get the latest version number use the  GitHub API.
+	resp, err := http.Get("https://api.github.com/repos/TIBCOSoftware/flogo-contrib/releases/latest")
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	var result Resp
+
+	json.Unmarshal(body, &result)
+
+	return result.Name
 
 }

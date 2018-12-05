@@ -12,7 +12,6 @@ import (
 )
 
 var exists = struct{}{}
-var listOfMods []*FlogoContribDescriptor
 
 // ParseAppDescriptor parse the application descriptor
 func ParseAppDescriptor(appJson string) (*FlogoAppDescriptor, error) {
@@ -187,4 +186,28 @@ func ReadContribDescriptor(descriptorFile string) (*FlogoContribDescriptor, erro
 	}
 
 	return descriptor, nil
+}
+
+func GetAllImports(path string) ([]string, error) {
+
+	var results []string
+	bytes, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	data := string(bytes)
+
+	pkgs := strings.Split(data[strings.Index(data, "(")+1:], "\n") //Get indivual rows containing pkgs.
+
+	for _, pkg := range pkgs {
+
+		// Remove last line containing ")" and any empty rows
+		if !strings.Contains(pkg, ")") && len(pkg) != 0 {
+			result := strings.Replace(strings.TrimSpace(pkg), "\"", "", -1)
+			results = append(results, strings.TrimSpace(strings.Replace(result, "_", "", -1)))
+
+		}
+	}
+
+	return results, nil
 }

@@ -41,16 +41,26 @@ func InstallPackage(project common.AppProject, pkg string) error {
 
 	return nil
 }
-func InstallLocalPackage(project common.AppProject, pkgs []string) error {
+func InstallLocalPackage(project common.AppProject, localPath string, pkg string) error {
 
-	project.DepManager().InstallLocalPkg(pkgs[0], pkgs[1])
+	project.DepManager().InstallLocalPkg(pkg, localPath)
 
-	return InstallPackage(project, pkgs[0])
+	return InstallPackage(project, pkg)
 }
-func ListPackages(project common.AppProject, format bool) error {
 
-	contribs, _ := util.GetImports(filepath.Join(project.Dir(), fileFlogoJson))
+func ListPackages(project common.AppProject, format bool, all bool) error {
+	var contribs []string
+
+	if all {
+		contribs, _ = util.GetAllImports(filepath.Join(project.SrcDir(), fileImportsGo)) // Get Imports from imports.go
+
+	} else {
+		contribs, _ = util.GetImports(filepath.Join(project.Dir(), fileFlogoJson)) // Get Imports from flogo.json
+
+	}
+
 	var result []interface{}
+
 	for _, contrib := range contribs {
 		path, err := project.GetPath(contrib)
 
@@ -59,6 +69,9 @@ func ListPackages(project common.AppProject, format bool) error {
 		}
 
 		desc, err := util.GetContribDescriptor(path)
+		if err != nil || desc == nil {
+			return err
+		}
 		data := struct {
 			Name        string `json:"name"`
 			Type        string `json:"type"`
