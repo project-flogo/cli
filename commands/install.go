@@ -10,12 +10,19 @@ import (
 )
 
 var localContrib string
+var palette string
 var installCmd = &cobra.Command{
 	Use:   "install [flags] <contribution>",
 	Short: "install a flogo contribution",
 	Long:  "Installs a flogo contribution",
 	Run: func(cmd *cobra.Command, args []string) {
-
+		if palette != "" {
+			err := api.InstallPalette(common.CurrentProject(), palette)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+				os.Exit(1)
+			}
+		}
 		if localContrib != "" {
 			err := api.InstallLocalPackage(common.CurrentProject(), localContrib, args[0])
 			if err != nil {
@@ -37,6 +44,7 @@ var installCmd = &cobra.Command{
 
 func init() {
 	installCmd.Flags().StringVarP(&localContrib, "localContrib", "l", "", "Specify local Contrib")
+	installCmd.Flags().StringVarP(&palette, "palette", "p", "", "Specify Palette")
 	rootCmd.AddCommand(installCmd)
 
 }

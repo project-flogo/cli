@@ -44,6 +44,11 @@ func (m *ModDepManager) Init() error {
 func (m *ModDepManager) AddDependency(path, version string, fetch bool) error {
 
 	depVersion := version
+	if strings.Contains(path, "@v") {
+		fmt.Println(path)
+		depVersion = strings.Split(path, "@")[1]
+		path = strings.Split(path, "@")[0]
+	}
 
 	if len(version) == 0 {
 		//Latest changed to master. Need to clear out in future.

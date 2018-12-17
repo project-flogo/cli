@@ -25,7 +25,6 @@ func InstallPackage(project common.AppProject, pkg string) error {
 	}
 
 	desc, err := util.GetContribDescriptor(path)
-
 	if desc != nil {
 		fmt.Printf("Installed %s: %s\n", desc.GetContribType(), pkg)
 	}
@@ -47,7 +46,28 @@ func InstallLocalPackage(project common.AppProject, localPath string, pkg string
 
 	return InstallPackage(project, pkg)
 }
+func InstallPalette(project common.AppProject, path string) error {
 
+	file, err := ioutil.ReadFile(path)
+
+	if err != nil {
+		return err
+	}
+
+	var paletteDescriptor []*util.FlogoPaletteDescriptor
+	err = json.Unmarshal(file, &paletteDescriptor)
+
+	if err != nil {
+		return err
+	}
+
+	for _, palette := range paletteDescriptor {
+		InstallPackage(project, fmt.Sprintf("%v", palette.Reference))
+	}
+
+	return nil
+
+}
 func ListPackages(project common.AppProject, format bool, all bool) error {
 	var contribs []string
 

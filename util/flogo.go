@@ -54,6 +54,12 @@ type FlogoContribDescriptor struct {
 	Shim        string `json:"shim"`
 }
 
+type FlogoPaletteDescriptor struct {
+	Name      string `json:"name"`
+	Version   string `json:"version"`
+	Reference string `json:"ref"`
+}
+
 func (d *FlogoContribDescriptor) GetContribType() string {
 	return strings.Split(d.Type, ":")[1]
 }
