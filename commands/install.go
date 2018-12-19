@@ -9,20 +9,42 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var localContrib string
+var palette string
 var installCmd = &cobra.Command{
 	Use:   "install [flags] <contribution>",
 	Short: "install a flogo contribution",
 	Long:  "Installs a flogo contribution",
-	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		err := api.InstallPackage(common.CurrentProject(), args[0])
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-			os.Exit(1)
+		if palette != "" {
+			err := api.InstallPalette(common.CurrentProject(), palette)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+				os.Exit(1)
+			}
 		}
+		if localContrib != "" {
+			err := api.InstallLocalPackage(common.CurrentProject(), localContrib, args[0])
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+				os.Exit(1)
+			}
+		} else {
+			for _, pkg := range args {
+				err := api.InstallPackage(common.CurrentProject(), pkg)
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+					os.Exit(1)
+				}
+			}
+		}
+
 	},
 }
 
 func init() {
+	installCmd.Flags().StringVarP(&localContrib, "localContrib", "l", "", "Specify local Contrib")
+	installCmd.Flags().StringVarP(&palette, "palette", "p", "", "Specify Palette")
 	rootCmd.AddCommand(installCmd)
+
 }

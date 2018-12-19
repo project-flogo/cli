@@ -27,3 +27,5 @@ flogo
 
 go.sum
 
+go.mod.build
+

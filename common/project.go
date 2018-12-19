@@ -1,5 +1,7 @@
 package common
 
+import "github.com/project-flogo/cli/util"
+
 type AppProject interface {
 	Validate() error
 	Name() string
@@ -10,4 +12,5 @@ type AppProject interface {
 	AddImports(ignoreError bool, imports ...string) error
 	RemoveImports(imports ...string) error
 	GetPath(pkg string) (string, error)
+	DepManager() util.DepManager
 }

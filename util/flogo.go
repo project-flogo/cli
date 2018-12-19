@@ -54,6 +54,12 @@ type FlogoContribDescriptor struct {
 	Shim        string `json:"shim"`
 }
 
+type FlogoPaletteDescriptor struct {
+	Name      string `json:"name"`
+	Version   string `json:"version"`
+	Reference string `json:"ref"`
+}
+
 func (d *FlogoContribDescriptor) GetContribType() string {
 	return strings.Split(d.Type, ":")[1]
 }
@@ -167,6 +173,7 @@ func getImportsLegacy(appJsonPath string) ([]string, error) {
 }
 
 func ReadContribDescriptor(descriptorFile string) (*FlogoContribDescriptor, error) {
+
 	descriptorJson, err := os.Open(descriptorFile)
 	if err != nil {
 		return nil, err
@@ -185,4 +192,28 @@ func ReadContribDescriptor(descriptorFile string) (*FlogoContribDescriptor, erro
 	}
 
 	return descriptor, nil
+}
+
+func GetAllImports(path string) ([]string, error) {
+
+	var results []string
+	bytes, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	data := string(bytes)
+
+	pkgs := strings.Split(data[strings.Index(data, "(")+1:], "\n") //Get indivual rows containing pkgs.
+
+	for _, pkg := range pkgs {
+
+		// Remove last line containing ")" and any empty rows
+		if !strings.Contains(pkg, ")") && len(pkg) != 0 {
+			result := strings.Replace(strings.TrimSpace(pkg), "\"", "", -1)
+			results = append(results, strings.TrimSpace(strings.Replace(result, "_", "", -1)))
+
+		}
+	}
+
+	return results, nil
 }

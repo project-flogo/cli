@@ -3,7 +3,11 @@ package util
 import (
 	"bufio"
 	"bytes"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"log"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -14,14 +18,17 @@ type DepManager interface {
 	Init() error
 	AddDependency(path, version string, fetch bool) error
 	GetPath(pkg string) (string, error)
+	AddLocalContribForBuild() error
+	InstallLocalPkg(string, string)
 }
 
 func NewDepManager(sourceDir string) DepManager {
-	return &ModDepManager{srcDir: sourceDir}
+	return &ModDepManager{srcDir: sourceDir, localMods: make(map[string]string)}
 }
 
 type ModDepManager struct {
-	srcDir string
+	srcDir    string
+	localMods map[string]string
 }
 
 func (m *ModDepManager) Init() error {
@@ -37,9 +44,16 @@ func (m *ModDepManager) Init() error {
 func (m *ModDepManager) AddDependency(path, version string, fetch bool) error {
 
 	depVersion := version
+	if strings.Contains(path, "@v") {
+		fmt.Println(path)
+		depVersion = strings.Split(path, "@")[1]
+		path = strings.Split(path, "@")[0]
+	}
 
 	if len(version) == 0 {
-		depVersion = "latest"
+		//Latest changed to master. Need to clear out in future.
+		//Changed to master due to Issue in flogo-contrib/legacy-support
+		depVersion = "master"
 	} else if version != "master" && version[0] != 'v' {
 		depVersion = "v" + version
 	}
@@ -56,7 +70,8 @@ func (m *ModDepManager) AddDependency(path, version string, fetch bool) error {
 
 	//note: hack, because go get isn't picking up latest
 	if strings.HasPrefix(path, "github.com/TIBCOSoftware/flogo-contrib") {
-		err := ExecCmd(exec.Command("go", "mod", "edit", "-require", "github.com/TIBCOSoftware/flogo-contrib@" + version), m.srcDir)
+		version = getLatestVersion("github.com/TIBCOSoftware/flogo-contrib")
+		err := ExecCmd(exec.Command("go", "mod", "edit", "-require", "github.com/TIBCOSoftware/flogo-contrib@"+version), m.srcDir)
 		if err != nil {
 			return err
 		}
@@ -64,6 +79,7 @@ func (m *ModDepManager) AddDependency(path, version string, fetch bool) error {
 
 	err := ExecCmd(exec.Command("go", "get", dep), m.srcDir)
 	if err != nil {
+		fmt.Println("Error in installing", dep)
 		return err
 	}
 
@@ -76,6 +92,12 @@ func (m *ModDepManager) GetPath(pkg string) (string, error) {
 	currentDir, err := os.Getwd()
 	if err != nil {
 		return "", err
+	}
+
+	path, ok := m.localMods[pkg]
+	if ok && path != "" {
+
+		return path, nil
 	}
 	defer os.Chdir(currentDir)
 
@@ -183,4 +205,76 @@ func ExecCmd(cmd *exec.Cmd, workingDir string) error {
 	}
 
 	return nil
+}
+
+func (m *ModDepManager) AddLocalContribForBuild() error {
+
+	text, err := ioutil.ReadFile(filepath.Join(m.srcDir, "go.mod"))
+	if err != nil {
+		return err
+	}
+	data := string(text)
+
+	index := strings.Index(data, "replace")
+	if index != -1 {
+		localModules := strings.Split(data[index-1:], "\n")
+
+		for _, val := range localModules {
+			if val != "" {
+				mods := strings.Split(val, " ")
+				//If the length of mods is more than 4 it contains the versions of package
+				//so it is stating to use different version of pkg rather than
+				// the local pkg.
+				if len(mods) < 5 {
+
+					m.localMods[mods[1]] = mods[3]
+				}
+
+			}
+
+		}
+		return nil
+	}
+	return nil
+}
+
+func (m *ModDepManager) InstallLocalPkg(pkg1 string, pkg2 string) {
+
+	m.localMods[pkg1] = pkg2
+
+	f, err := os.OpenFile(filepath.Join(m.srcDir, "go.mod"), os.O_APPEND|os.O_WRONLY, 0777)
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+
+	if _, err = f.WriteString(fmt.Sprintf("replace %v => %v", pkg1, pkg2)); err != nil {
+		panic(err)
+	}
+
+}
+
+type Resp struct {
+	Name string `json:"name"`
+}
+
+func getLatestVersion(path string) string {
+
+	//To get the latest version number use the  GitHub API.
+	resp, err := http.Get("https://api.github.com/repos/TIBCOSoftware/flogo-contrib/releases/latest")
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	var result Resp
+
+	json.Unmarshal(body, &result)
+
+	return result.Name
+
 }

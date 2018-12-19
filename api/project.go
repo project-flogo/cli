@@ -22,6 +22,8 @@ const (
 	dirBin        = "bin"
 )
 
+var GOOSENV = os.Getenv("GOOS")
+
 type appProjectImpl struct {
 	appDir  string
 	appName string
@@ -87,7 +89,7 @@ func (p *appProjectImpl) Executable() string {
 
 	var execPath string
 
-	if runtime.GOOS == "windows" {
+	if runtime.GOOS == "windows" || GOOSENV == "windows" {
 		execPath = filepath.Join(p.binDir, p.appName+".exe")
 	} else {
 		execPath = filepath.Join(p.binDir, p.appName)

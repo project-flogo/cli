@@ -31,6 +31,8 @@ var fileSampleShimSupport = filepath.Join("examples", "engine", "shim", fileShim
 
 func BuildProject(project common.AppProject, options BuildOptions) error {
 
+	project.DepManager().AddLocalContribForBuild()
+
 	useShim := options.Shim != ""
 
 	err := createEmbeddedAppGoFile(project, options.EmbedConfig || useShim)
@@ -53,21 +55,27 @@ func BuildProject(project common.AppProject, options BuildOptions) error {
 		if err != nil {
 			return err
 		}
+		return nil
 	}
 
 	err = util.ExecCmd(exec.Command("go", "build"), project.SrcDir())
 	if err != nil {
+		fmt.Println("Error in building", project.SrcDir())
 		return err
 	}
 
 	exe := filepath.Join(project.SrcDir(), "main")
 
-	if runtime.GOOS == "windows" {
+	if runtime.GOOS == "windows" || GOOSENV == "windows" {
 		exe = filepath.Join(project.SrcDir(), "main.exe")
 	}
 
+	if common.Verbose() {
+		fmt.Println("Path to exe is ", exe)
+	}
 	if _, err := os.Stat(exe); err == nil {
 		err = os.Rename(exe, project.Executable())
+
 		if err != nil {
 			return err
 		}
@@ -114,8 +122,9 @@ func prepareShim(project common.AppProject, shim string) error {
 			if err != nil {
 				return err
 			}
+			var shimFilePath string
 
-			shimFilePath := filepath.Join(path, dirShim, fileShimGo)
+			shimFilePath = filepath.Join(path, dirShim, fileShimGo)
 
 			if _, err := os.Stat(shimFilePath); err == nil {
 
@@ -124,7 +133,8 @@ func prepareShim(project common.AppProject, shim string) error {
 				// Check if this shim based trigger has a gobuild file. If the trigger has a gobuild
 				// execute that file, otherwise check if there is a Makefile to execute
 				goBuildFilePath := filepath.Join(path, dirShim, fileBuildGo)
-				makefilePath := filepath.Join(path, dirShim, fileMakefile)
+
+				makefilePath := filepath.Join(shimFilePath, dirShim, fileMakefile)
 
 				if _, err := os.Stat(goBuildFilePath); err == nil {
 					fmt.Println("This trigger makes use of a go build file...")
@@ -133,13 +143,8 @@ func prepareShim(project common.AppProject, shim string) error {
 					copyFile(goBuildFilePath, filepath.Join(project.SrcDir(), fileBuildGo))
 
 					// Execute go run gobuild.go
-					cmd := exec.Command("go", "run", fileBuildGo, project.SrcDir())
-					cmd.Stdout = os.Stdout
-					cmd.Stderr = os.Stderr
-					cmd.Dir = project.Dir()
-					cmd.Env = util.ReplaceEnvValue(os.Environ(), "GOPATH", project.Dir())
+					err = util.ExecCmd(exec.Command("go", "run", fileBuildGo), project.SrcDir())
 
-					err = cmd.Run()
 					if err != nil {
 						return err
 					}
