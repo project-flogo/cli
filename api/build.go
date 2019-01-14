@@ -51,11 +51,15 @@ func BuildProject(project common.AppProject, options BuildOptions) error {
 	}
 
 	if useShim {
-		err = prepareShim(project, options.Shim)
+		buildExist, err := prepareShim(project, options.Shim)
 		if err != nil {
 			return err
 		}
-		return nil
+
+		if buildExist {
+			return nil
+		}
+
 	}
 
 	err = util.ExecCmd(exec.Command("go", "build"), project.SrcDir())
@@ -86,23 +90,23 @@ func BuildProject(project common.AppProject, options BuildOptions) error {
 	return nil
 }
 
-func prepareShim(project common.AppProject, shim string) error {
+func prepareShim(project common.AppProject, shim string) (bool, error) {
 
 	buf, err := ioutil.ReadFile(filepath.Join(project.Dir(), fileFlogoJson))
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	flogoJSON := string(buf)
 
 	descriptor, err := util.ParseAppDescriptor(flogoJSON)
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	err = registerImports(project, descriptor)
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	for _, trgCfg := range descriptor.Triggers {
@@ -114,13 +118,13 @@ func prepareShim(project common.AppProject, shim string) error {
 				found := false
 				ref, found = GetAliasRef("flogo:trigger", trgCfg.Type)
 				if !found {
-					return fmt.Errorf("unable to determine ref for trigger: %s", trgCfg.Id)
+					return false, fmt.Errorf("unable to determine ref for trigger: %s", trgCfg.Id)
 				}
 			}
 
 			path, err := project.GetPath(ref)
 			if err != nil {
-				return err
+				return false, err
 			}
 			var shimFilePath string
 
@@ -138,7 +142,6 @@ func prepareShim(project common.AppProject, shim string) error {
 
 				if _, err := os.Stat(goBuildFilePath); err == nil {
 					fmt.Println("This trigger makes use of a go build file...")
-					fmt.Println("Go build file:", goBuildFilePath)
 
 					copyFile(goBuildFilePath, filepath.Join(project.SrcDir(), fileBuildGo))
 
@@ -146,7 +149,7 @@ func prepareShim(project common.AppProject, shim string) error {
 					err = util.ExecCmd(exec.Command("go", "run", fileBuildGo), project.SrcDir())
 
 					if err != nil {
-						return err
+						return false, err
 					}
 				} else if _, err := os.Stat(makefilePath); err == nil {
 					//look for Makefile and execute it
@@ -162,8 +165,10 @@ func prepareShim(project common.AppProject, shim string) error {
 
 					err = cmd.Run()
 					if err != nil {
-						return err
+						return false, err
 					}
+				} else {
+					return false, nil
 				}
 			}
 
@@ -171,7 +176,7 @@ func prepareShim(project common.AppProject, shim string) error {
 		}
 	}
 
-	return nil
+	return true, nil
 }
 
 func createShimSupportGoFile(project common.AppProject, create bool) error {
