@@ -50,6 +50,7 @@ type FlogoContribDescriptor struct {
 	Type        string `json:"type"`
 	Version     string `json:"version"`
 	Description string `json:"description"`
+	Homepage    string `json:"homepage"`
 	Ref         string `json:"ref"`
 	Shim        string `json:"shim"`
 }

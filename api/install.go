@@ -96,12 +96,14 @@ func ListPackages(project common.AppProject, format bool, all bool) error {
 			Name        string `json:"name"`
 			Type        string `json:"type"`
 			Description string `json:"descriptiom"`
+			Homepage    string `json:"homepage"`
 			Ref         string `json:"ref"`
 			Path        string `json:"path"`
 		}{
 			desc.Name,
 			desc.Type,
 			desc.Description,
+			desc.Homepage,
 			desc.Ref,
 			getDescriptorFile(path),
 		}
