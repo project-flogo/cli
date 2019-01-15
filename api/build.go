@@ -55,7 +55,6 @@ func BuildProject(project common.AppProject, options BuildOptions) error {
 		if err != nil {
 			return err
 		}
-		return nil
 	}
 
 	err = util.ExecCmd(exec.Command("go", "build"), project.SrcDir())
