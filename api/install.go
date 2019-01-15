@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -20,6 +21,9 @@ func InstallPackage(project common.AppProject, pkg string) error {
 	}
 
 	path, err := project.GetPath(pkg)
+	if Verbose() {
+		fmt.Println("Installed path", path)
+	}
 	if err != nil {
 		return err
 	}
@@ -69,6 +73,13 @@ func InstallPalette(project common.AppProject, path string) error {
 
 }
 func ListPackages(project common.AppProject, format bool, all bool) error {
+
+	err := util.ExecCmd(exec.Command("go", "mod", "tidy"), project.SrcDir())
+	if err != nil {
+		fmt.Println("Error in tidying up modules")
+		return err
+	}
+
 	var contribs []string
 
 	if all {
@@ -82,29 +93,41 @@ func ListPackages(project common.AppProject, format bool, all bool) error {
 	var result []interface{}
 
 	for _, contrib := range contribs {
+		contrib = clearVersion(contrib)
+
 		path, err := project.GetPath(contrib)
+		if Verbose() {
+			fmt.Println("Path of contrib", path, "for contrib", contrib)
+		}
 
 		if err != nil {
 			return err
 		}
 
 		desc, err := util.GetContribDescriptor(path)
-		if err != nil || desc == nil {
+
+		if Verbose() {
+			fmt.Println("Path of contrib descriptor", desc)
+		}
+		if err != nil {
 			return err
+		}
+		if desc == nil {
+			continue
 		}
 		data := struct {
 			Name        string `json:"name"`
 			Type        string `json:"type"`
-			Description string `json:"descriptiom"`
-			Homepage    string `json:"homepage"`
-			Ref         string `json:"ref"`
+      Description string `json:"description"`
+      Homepage    string `json:"homepage"`
+      Ref         string `json:"ref"`
 			Path        string `json:"path"`
 		}{
 			desc.Name,
 			desc.Type,
 			desc.Description,
-			desc.Homepage,
-			desc.Ref,
+      desc.Homepage,
+      contrib,
 			getDescriptorFile(path),
 		}
 
@@ -133,4 +156,13 @@ func getDescriptorFile(path string) string {
 		}
 	}
 	return ""
+}
+func clearVersion(pkg string) string {
+
+	if strings.Contains(pkg, "@") {
+
+		return strings.Split(pkg, "@")[0]
+
+	}
+	return pkg
 }

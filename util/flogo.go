@@ -68,7 +68,9 @@ func (d *FlogoContribDescriptor) GetContribType() string {
 func GetContribDescriptor(path string) (*FlogoContribDescriptor, error) {
 
 	files, err := ioutil.ReadDir(path)
+
 	if err != nil {
+		fmt.Errorf("Unable to find ", path)
 		return nil, err
 	}
 
@@ -81,7 +83,7 @@ func GetContribDescriptor(path string) (*FlogoContribDescriptor, error) {
 			}
 		}
 	}
-	return nil, fmt.Errorf("descriptor not found for in: %s", path)
+	return nil, nil
 }
 
 // ParseAppDescriptor parse the application descriptor

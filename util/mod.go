@@ -77,7 +77,7 @@ func (m *ModDepManager) AddDependency(path, version string, fetch bool) error {
 		}
 	}
 
-	err := ExecCmd(exec.Command("go", "get", dep), m.srcDir)
+	err := ExecCmd(exec.Command("go", "get", "-u", dep), m.srcDir)
 	if err != nil {
 		fmt.Println("Error in installing", dep)
 		return err
@@ -113,6 +113,7 @@ func (m *ModDepManager) GetPath(pkg string) (string, error) {
 
 		line := scanner.Text()
 		reqComponents := strings.Fields(line)
+		//It is the line in the go.mod which is not useful, so ignore.
 		if len(reqComponents) < 2 || (reqComponents[0] == "require" && reqComponents[1] == "(") {
 			continue
 		}
@@ -129,8 +130,8 @@ func (m *ModDepManager) GetPath(pkg string) (string, error) {
 		if strings.HasPrefix(pkg, reqPkg) {
 
 			hasFull := strings.Contains(line, pkg)
-
 			tempPath := strings.Split(reqPkg, "/")
+
 			tempPath = toLower(tempPath)
 			lastIdx := len(tempPath) - 1
 
