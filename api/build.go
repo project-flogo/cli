@@ -55,10 +55,10 @@ func BuildProject(project common.AppProject, options BuildOptions) error {
 		if err != nil {
 			return err
 		}
-
-		if buildExist {
+    if buildExist {
 			return nil
 		}
+
 
 	}
 
