@@ -3,7 +3,6 @@ package api
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -91,28 +90,6 @@ func (t *TestEnv) cleanup() {
 	os.RemoveAll(t.currentDir)
 }
 
-func GetTempDir() string {
-	err := os.Setenv("FLOGO_BUILD_EXPERIMENTAL", "true")
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = os.Setenv("GO111MODULE", "on")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer os.Unsetenv("FLOGO_BUILD_EXPERIMENTAL")
-
-	tempDir, err := ioutil.TempDir("", "test")
-	if err != nil {
-		log.Fatal(err)
-	}
-	tempDirInfo, err := filepath.EvalSymlinks(tempDir)
-	if err == nil {
-		// Sym link
-		tempDir = tempDirInfo
-	}
-	return tempDir
-}
 func TestCmdCreate_noflag(t *testing.T) {
 	t.Log("Testing simple creation of project")
 
