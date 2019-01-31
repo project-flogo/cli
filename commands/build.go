@@ -33,8 +33,6 @@ var buildCmd = &cobra.Command{
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {},
 	Run: func(cmd *cobra.Command, args []string) {
 
-		//If a jsonFile is specified in the build.
-		//Create a new project in the temp folder and copy the bin.
 		if jsonFile == "" {
 			preRun(cmd, args, verbose)
 			options := api.BuildOptions{Shim: buildShim, OptimizeImports: buildOptimize, EmbedConfig: buildEmbed}
@@ -46,37 +44,44 @@ var buildCmd = &cobra.Command{
 			}
 
 		} else {
+			//If a jsonFile is specified in the build.
+			//Create a new project in the temp folder and copy the bin.
 			currDir, err := os.Getwd()
-			tempDir := api.GetTempDir()
+
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+				os.Exit(1)
+			}
+
+			tempDir, err := api.GetTempDir()
+
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+				os.Exit(1)
+			}
 
 			api.SetVerbose(verbose)
-			err = api.CreateProject(tempDir, "appName", jsonFile, "master")
+			tempProject, err := api.CreateProject(tempDir, "", jsonFile, "master")
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 				os.Exit(1)
 			}
 
-			appProject := api.NewAppProject(filepath.Join(tempDir, "appName"))
+			common.SetCurrentProject(tempProject)
 
-			err = appProject.Validate()
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-				os.Exit(1)
-			}
-
-			common.SetCurrentProject(appProject)
 			options := api.BuildOptions{Shim: buildShim, OptimizeImports: buildOptimize, EmbedConfig: buildEmbed}
 
 			err = api.BuildProject(common.CurrentProject(), options)
+
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 				os.Exit(1)
 			}
 
 			if verbose {
-				fmt.Printf("Copying the binary from  %s to %s \n", filepath.Join(tempDir, "appName", "bin"), currDir)
+				fmt.Printf("Copying the binary from  %s to %s \n", filepath.Join(tempDir, currProject.Name(), "bin"), currDir)
 			}
-			_, err = exec.Command("cp", filepath.Join(tempDir, "appName", "bin", "appName"), currDir).Output()
+			_, err = exec.Command("cp", filepath.Join(tempDir, currProject.Name(), "bin", currProject.Name()), currDir).Output()
 
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error: %v\n", err)

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -16,7 +15,7 @@ import (
 var fileSampleFlogoJson = filepath.Join("examples", "engine", "flogo.json")
 var fileSampleEngineMain = filepath.Join("examples", "engine", "main.go")
 
-func CreateProject(basePath, appName, appCfgPath, coreVersion string) error {
+func CreateProject(basePath, appName, appCfgPath, coreVersion string) (common.AppProject, error) {
 
 	var err error
 	var appJson string
@@ -27,30 +26,30 @@ func CreateProject(basePath, appName, appCfgPath, coreVersion string) error {
 
 			appJson, err = util.LoadRemoteFile(appCfgPath)
 			if err != nil {
-				return fmt.Errorf("unable to load remote app file '%s' - %s", appCfgPath, err.Error())
+				return nil, fmt.Errorf("unable to load remote app file '%s' - %s", appCfgPath, err.Error())
 			}
 		} else {
 			appJson, err = util.LoadLocalFile(appCfgPath)
 			if err != nil {
-				return fmt.Errorf("unable to load app file '%s' - %s", appCfgPath, err.Error())
+				return nil, fmt.Errorf("unable to load app file '%s' - %s", appCfgPath, err.Error())
 			}
 		}
 	} else {
 		if len(appName) == 0 {
-			return fmt.Errorf("app name not specified")
+			return nil, fmt.Errorf("app name not specified")
 		}
 	}
 
 	appName, err = getAppName(appName, appJson)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	fmt.Printf("Creating Flogo App: %s\n", appName)
 
 	appDir, err := createAppDirectory(basePath, appName)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	srcDir := filepath.Join(appDir, "src")
@@ -61,7 +60,7 @@ func CreateProject(basePath, appName, appCfgPath, coreVersion string) error {
 	}
 	err = setupAppDirectory(dm, appDir, coreVersion)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if Verbose() {
@@ -71,12 +70,12 @@ func CreateProject(basePath, appName, appCfgPath, coreVersion string) error {
 	}
 	err = createAppJson(dm, appDir, appName, appJson)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	err = createMain(dm, appDir)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	project := NewAppProject(appDir)
@@ -86,14 +85,14 @@ func CreateProject(basePath, appName, appCfgPath, coreVersion string) error {
 	}
 	err = importDependencies(project)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if Verbose() {
 		fmt.Printf("Created App: %s\n", appName)
 	}
 
-	return nil
+	return project, nil
 }
 
 // createAppDirectory creates the flogo app directory
@@ -299,25 +298,11 @@ func getAppName(appName, appJson string) (string, error) {
 
 	return appName, nil
 }
-func GetTempDir() string {
-	err := os.Setenv("FLOGO_BUILD_EXPERIMENTAL", "true")
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = os.Setenv("GO111MODULE", "on")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer os.Unsetenv("FLOGO_BUILD_EXPERIMENTAL")
+func GetTempDir() (string, error) {
 
-	tempDir, err := ioutil.TempDir("", "test")
+	tempDir, err := ioutil.TempDir("", "flogo")
 	if err != nil {
-		log.Fatal(err)
+		return "", err
 	}
-	tempDirInfo, err := filepath.EvalSymlinks(tempDir)
-	if err == nil {
-		// Sym link
-		tempDir = tempDirInfo
-	}
-	return tempDir
+	return tempDir, nil
 }
