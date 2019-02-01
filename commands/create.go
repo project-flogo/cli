@@ -32,7 +32,7 @@ var CreateCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		err = api.CreateProject(currentDir, appName, flogoJsonPath, coreVersion)
+		_, err = api.CreateProject(currentDir, appName, flogoJsonPath, coreVersion)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)

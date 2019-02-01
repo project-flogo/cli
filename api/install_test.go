@@ -98,7 +98,7 @@ var newJsonString = `{
 func TestInstallLegacyPkg(t *testing.T) {
 	t.Log("Testing installation of package")
 
-	tempDir := GetTempDir()
+	tempDir, _ := GetTempDir()
 
 	testEnv := &TestEnv{currentDir: tempDir}
 
@@ -106,7 +106,7 @@ func TestInstallLegacyPkg(t *testing.T) {
 
 	t.Logf("Current dir '%s'", testEnv.currentDir)
 
-	err := CreateProject(testEnv.currentDir, "myApp", "", "")
+	_, err := CreateProject(testEnv.currentDir, "myApp", "", "")
 
 	assert.Equal(t, nil, err)
 
@@ -118,7 +118,7 @@ func TestInstallLegacyPkg(t *testing.T) {
 func TestInstallPkg(t *testing.T) {
 	t.Log("Testing installation of package")
 
-	tempDir := GetTempDir()
+	tempDir, _ := GetTempDir()
 
 	testEnv := &TestEnv{currentDir: tempDir}
 
@@ -126,7 +126,7 @@ func TestInstallPkg(t *testing.T) {
 
 	t.Logf("Current dir '%s'", testEnv.currentDir)
 
-	err := CreateProject(testEnv.currentDir, "myApp", "", "")
+	_, err := CreateProject(testEnv.currentDir, "myApp", "", "")
 
 	assert.Equal(t, nil, err)
 
@@ -138,7 +138,7 @@ func TestInstallPkg(t *testing.T) {
 func TestListPkg(t *testing.T) {
 	t.Log("Testing listing of packages")
 
-	tempDir := GetTempDir()
+	tempDir, _ := GetTempDir()
 
 	testEnv := &TestEnv{currentDir: tempDir}
 
@@ -146,7 +146,7 @@ func TestListPkg(t *testing.T) {
 
 	t.Logf("Current dir '%s'", testEnv.currentDir)
 
-	err := CreateProject(testEnv.currentDir, "myApp", "", "")
+	_, err := CreateProject(testEnv.currentDir, "myApp", "", "")
 
 	assert.Equal(t, nil, err)
 
@@ -158,7 +158,7 @@ func TestListPkg(t *testing.T) {
 func TestListAllPkg(t *testing.T) {
 	t.Log("Testing listing of all contribs")
 
-	tempDir := GetTempDir()
+	tempDir, _ := GetTempDir()
 
 	testEnv := &TestEnv{currentDir: tempDir}
 
@@ -166,7 +166,7 @@ func TestListAllPkg(t *testing.T) {
 
 	t.Logf("Current dir '%s'", testEnv.currentDir)
 
-	err := CreateProject(testEnv.currentDir, "myApp", "", "")
+	_, err := CreateProject(testEnv.currentDir, "myApp", "", "")
 
 	assert.Equal(t, nil, err)
 
@@ -178,13 +178,15 @@ func TestListAllPkg(t *testing.T) {
 func TestListWithLegacyPkg(t *testing.T) {
 	t.Log("Testing listing of legacy contribs")
 
-	tempDir := GetTempDir()
+	tempDir, _ := GetTempDir()
 
 	testEnv := &TestEnv{currentDir: tempDir}
 
 	defer testEnv.cleanup()
 
 	t.Logf("Current dir '%s'", testEnv.currentDir)
+
+	err := os.Chdir(tempDir)
 
 	file, err := os.Create("flogo.json")
 	if err != nil {
@@ -193,7 +195,8 @@ func TestListWithLegacyPkg(t *testing.T) {
 	}
 	defer file.Close()
 	fmt.Fprintf(file, newJsonString)
-	assert.Equal(t, nil, CreateProject(testEnv.currentDir, "temp", "flogo.json", ""))
+	_, err = CreateProject(testEnv.currentDir, "temp", "flogo.json", "")
+	assert.Equal(t, nil, err)
 
 	err = ListPackages(NewAppProject(filepath.Join(testEnv.currentDir, "temp")), true, false)
 	assert.Equal(t, nil, err)

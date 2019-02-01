@@ -25,27 +25,7 @@ var rootCmd = &cobra.Command{
 	Version: Version,
 
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
-		api.SetVerbose(verbose)
-		common.SetVerbose(verbose)
-
-		builtIn := cmd.Name() == "help" || cmd.Name() == "version"
-
-		if len(os.Args) > 1 && !builtIn {
-			currentDir, err := os.Getwd()
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Error: unable to determine working directory - %s\n", err)
-				os.Exit(1)
-			}
-			appProject := api.NewAppProject(currentDir)
-
-			err = appProject.Validate()
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-				os.Exit(1)
-			}
-
-			common.SetCurrentProject(appProject)
-		}
+		preRun(cmd, args, verbose)
 	},
 }
 
@@ -68,5 +48,29 @@ func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
+	}
+}
+
+func preRun(cmd *cobra.Command, args []string, verbose bool) {
+	api.SetVerbose(verbose)
+	common.SetVerbose(verbose)
+
+	builtIn := cmd.Name() == "help" || cmd.Name() == "version"
+
+	if len(os.Args) > 1 && !builtIn {
+		currentDir, err := os.Getwd()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: unable to determine working directory - %s\n", err)
+			os.Exit(1)
+		}
+		appProject := api.NewAppProject(currentDir)
+
+		err = appProject.Validate()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
+
+		common.SetCurrentProject(appProject)
 	}
 }

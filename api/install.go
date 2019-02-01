@@ -118,16 +118,16 @@ func ListPackages(project common.AppProject, format bool, all bool) error {
 		data := struct {
 			Name        string `json:"name"`
 			Type        string `json:"type"`
-      Description string `json:"description"`
-      Homepage    string `json:"homepage"`
-      Ref         string `json:"ref"`
+			Description string `json:"description"`
+			Homepage    string `json:"homepage"`
+			Ref         string `json:"ref"`
 			Path        string `json:"path"`
 		}{
 			desc.Name,
 			desc.Type,
 			desc.Description,
-      desc.Homepage,
-      contrib,
+			desc.Homepage,
+			contrib,
 			getDescriptorFile(path),
 		}
 
