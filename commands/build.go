@@ -3,8 +3,8 @@ package commands
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
+	"runtime"
 
 	"github.com/project-flogo/cli/api"
 	"github.com/project-flogo/cli/common"
@@ -46,12 +46,6 @@ var buildCmd = &cobra.Command{
 		} else {
 			//If a jsonFile is specified in the build.
 			//Create a new project in the temp folder and copy the bin.
-			currDir, err := os.Getwd()
-
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-				os.Exit(1)
-			}
 
 			tempDir, err := api.GetTempDir()
 
@@ -78,25 +72,44 @@ var buildCmd = &cobra.Command{
 				os.Exit(1)
 			}
 
-			if verbose {
-				fmt.Printf("Copying the binary from  %s to %s \n", filepath.Join(tempDir, currProject.Name(), "bin"), currDir)
-			}
-			_, err = exec.Command("cp", filepath.Join(tempDir, currProject.Name(), "bin", currProject.Name()), currDir).Output()
-
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-				os.Exit(1)
-			}
-			if verbose {
-				fmt.Printf("Removing the temp dir  %s  \n ", tempDir)
-			}
-			err = os.RemoveAll(tempDir)
-
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-				os.Exit(1)
-			}
+			copyBin(verbose, tempProject)
 		}
 
 	},
+}
+
+func copyBin(verbose bool, tempProject common.AppProject) {
+	currDir, err := os.Getwd()
+
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
+	if verbose {
+		fmt.Printf("Copying the binary from  %s to %s \n", tempProject.BinDir(), currDir)
+	}
+
+	if runtime.GOOS == "windows" || api.GOOSENV == "windows" {
+		err = os.Rename(tempProject.Executable(), filepath.Join(currDir, "main.exe"))
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
+	} else {
+		err = os.Rename(tempProject.Executable(), filepath.Join(currDir, tempProject.Name()))
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
+	}
+
+	if verbose {
+		fmt.Printf("Removing the temp dir  %s  \n ", tempProject.Dir())
+	}
+	err = os.RemoveAll(tempProject.Dir())
+
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
 }
