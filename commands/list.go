@@ -20,8 +20,9 @@ var listCmd = &cobra.Command{
 		err := api.ListPackages(common.CurrentProject(), json, all)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
 		}
-		os.Exit(1)
+
 	},
 }
 
