@@ -70,7 +70,7 @@ func GetContribDescriptor(path string) (*FlogoContribDescriptor, error) {
 	files, err := ioutil.ReadDir(path)
 
 	if err != nil {
-		fmt.Errorf("Unable to find ", path)
+		fmt.Errorf("Unable to find %v", path)
 		return nil, err
 	}
 

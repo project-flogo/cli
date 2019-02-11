@@ -55,10 +55,9 @@ func BuildProject(project common.AppProject, options BuildOptions) error {
 		if err != nil {
 			return err
 		}
-    if buildExist {
+		if buildExist {
 			return nil
 		}
-
 
 	}
 
@@ -68,17 +67,21 @@ func BuildProject(project common.AppProject, options BuildOptions) error {
 		return err
 	}
 
-	exe := filepath.Join(project.SrcDir(), "main")
+	// assume linux/darwin env or cross platform by default
+	exe := "main"
 
-	if runtime.GOOS == "windows" || GOOSENV == "windows" {
-		exe = filepath.Join(project.SrcDir(), "main.exe")
+	if GOOSENV == "windows" || (runtime.GOOS == "windows" && GOOSENV == "") {
+		// env or cross platform is windows
+		exe = "main.exe"
 	}
+
+	exePath := filepath.Join(project.SrcDir(), exe)
 
 	if common.Verbose() {
-		fmt.Println("Path to exe is ", exe)
+		fmt.Println("Path to exe is ", exePath)
 	}
-	if _, err := os.Stat(exe); err == nil {
-		err = os.Rename(exe, project.Executable())
+	if _, err := os.Stat(exePath); err == nil {
+		err = os.Rename(exePath, project.Executable())
 
 		if err != nil {
 			return err
