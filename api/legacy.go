@@ -49,14 +49,14 @@ func createLegacyMetadata(path, contribType, contribPkg string) error {
 	tplMetadata := ""
 
 	switch contribType {
-	case "action.json":
+	case "action":
 		//ignore
 		return nil
-	case "trigger.json":
+	case "trigger":
 		fmt.Printf("Generating metadata for legacy trigger: %s\n", contribPkg)
 		mdGoFilePath = filepath.Join(path, "trigger_metadata.go")
 		tplMetadata = tplTriggerMetadataGoFile
-	case "activity.json":
+	case "activity":
 		fmt.Printf("Generating metadata for legacy actvity: %s\n", contribPkg)
 		mdGoFilePath = filepath.Join(path, "activity_metadata.go")
 		tplMetadata = tplActivityMetadataGoFile
@@ -64,7 +64,7 @@ func createLegacyMetadata(path, contribType, contribPkg string) error {
 		return nil
 	}
 
-	mdFilePath := filepath.Join(path, contribType)
+	mdFilePath := filepath.Join(path, contribType+".json")
 	pkg := filepath.Base(path)
 
 	raw, err := ioutil.ReadFile(mdFilePath)
