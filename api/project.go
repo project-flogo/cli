@@ -89,10 +89,11 @@ func (p *appProjectImpl) Executable() string {
 
 	var execPath string
 
-	if runtime.GOOS == "windows" || GOOSENV == "windows" {
+	execPath = filepath.Join(p.binDir, p.appName)
+
+	if GOOSENV == "windows" || (runtime.GOOS == "windows" && GOOSENV == "") {
+		// env or cross platform is windows
 		execPath = filepath.Join(p.binDir, p.appName+".exe")
-	} else {
-		execPath = filepath.Join(p.binDir, p.appName)
 	}
 
 	return execPath
