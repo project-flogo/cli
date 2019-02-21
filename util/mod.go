@@ -16,7 +16,7 @@ import (
 
 type DepManager interface {
 	Init() error
-	AddDependency(path, version string) error
+	AddDependency(path, version string, fetch bool) (importPath string, err error)
 	GetPath(pkg string) (string, error)
 	AddLocalContribForBuild() error
 	InstallLocalPkg(string, string)
@@ -41,20 +41,27 @@ func (m *ModDepManager) Init() error {
 	return nil
 }
 
-func (m *ModDepManager) AddDependency(path, version string) error {
+func (m *ModDepManager) AddDependency(path, version string, fetch bool) (string, error) {
 
-	var dep string
-	if version != "" {
-		dep = path + "@" + version
-	} else {
-		dep = path + "@latest"
+	depVersion := version
+	if strings.Contains(path, "@v") {
+		depVersion = strings.Split(path, "@")[1]
+		path = strings.Split(path, "@")[0]
+	}
+
+	if len(depVersion) == 0 {
+		//Latest changed to master. Need to clear out in future.
+		//Changed to master due to Issue in flogo-contrib/legacy-support
+		depVersion = "master"
+	} else if depVersion != "master" && depVersion[0] != 'v' {
+		depVersion = "v" + version
 	}
 
 	//note: hack, because go get doesn't add core to go.mod
 	if path == "github.com/project-flogo/core" {
 		err := ExecCmd(exec.Command("go", "mod", "edit", "-require", dep), m.srcDir)
 		if err != nil {
-			return err
+			return "", err
 		}
 	}
 
@@ -63,17 +70,21 @@ func (m *ModDepManager) AddDependency(path, version string) error {
 		version = getLatestVersion("github.com/TIBCOSoftware/flogo-contrib")
 		err := ExecCmd(exec.Command("go", "mod", "edit", "-require", "github.com/TIBCOSoftware/flogo-contrib@"+version), m.srcDir)
 		if err != nil {
-			return err
+			return "", err
 		}
 	}
 
-	err := ExecCmd(exec.Command("go", "get", "-u", dep), m.srcDir)
+	// use "go mod edit" instead of "go get -u", "go mod verify" will ensure dependencies at the end of imports
+	err := ExecCmd(exec.Command("go", "mod", "edit", "-require", dep), m.srcDir)
 	if err != nil {
 		fmt.Println("Error in installing", dep)
-		return err
+		return "", err
 	}
 
-	return nil
+	return path, nil // return import path without the version
+	// note for the future: based on resolved depVersion, the import path could be updated by adding
+	// the according vX suffix in import path, for instance: github.com/corp/contrib/v2
+	// this import path will then be used in imports.go & flogo.json files
 }
 
 // GetPath gets the path of where the

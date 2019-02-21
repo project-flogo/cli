@@ -1,12 +1,17 @@
 package api
 
 import (
+	"encoding/json"
 	"fmt"
+	"github.com/project-flogo/core/app" // dependency to core ensures the CLI always uses an up-to-date struct for JSON manipulation (this dependency already exists implicitly in the "flogo create" command)
 	"go/parser"
 	"go/printer"
 	"go/token"
+	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"regexp"
 	"runtime"
 
 	"github.com/project-flogo/cli/common"
@@ -104,8 +109,7 @@ func (p *appProjectImpl) GetPath(pkg string) (string, error) {
 	return p.dm.GetPath(pkg)
 }
 
-func (p *appProjectImpl) AddImports(ignoreError bool, imports ...string) error {
-
+func (p *appProjectImpl) addImportsInGo(ignoreError bool, imports ...string) error {
 	importsFile := filepath.Join(p.SrcDir(), fileImportsGo)
 
 	fset := token.NewFileSet()
@@ -114,17 +118,16 @@ func (p *appProjectImpl) AddImports(ignoreError bool, imports ...string) error {
 		return err
 	}
 
-	for _, impPath := range imports {
-		path, version := util.ParseImportPath(impPath)
-		err := p.DepManager().AddDependency(path, version)
+	for _, importPath := range imports {
+		importPath, err := p.DepManager().AddDependency(importPath, "", true)
 		if err != nil {
 			if ignoreError {
-				fmt.Printf("Warning: unable to install %s\n", impPath)
+				fmt.Printf("Warning: unable to install %s\n", importPath)
 				continue
 			}
 			return err
 		}
-		util.AddImport(fset, file, path)
+		util.AddImport(fset, file, importPath)
 	}
 
 	f, err := os.Create(importsFile)
@@ -135,7 +138,69 @@ func (p *appProjectImpl) AddImports(ignoreError bool, imports ...string) error {
 
 	//p.dm.Finalize()
 
+	// using "go mod verify" can solve some dependencies conflicts (when contributions are dependent of others)
+	err = util.ExecCmd(exec.Command("go", "mod", "verify"), p.srcDir)
+	if err != nil {
+		return err
+	}
+
 	return nil
+}
+
+func (p *appProjectImpl) addImportsInJson(ignoreError bool, imports ...string) error {
+	appDescriptorFile := filepath.Join(p.appDir, fileFlogoJson)
+	appDescriptorJsonFile, err := os.Open(appDescriptorFile)
+	if err != nil {
+		return err
+	}
+	defer appDescriptorJsonFile.Close()
+
+	appDescriptorData, err := ioutil.ReadAll(appDescriptorJsonFile)
+	if err != nil {
+		return err
+	}
+
+	var appDescriptor app.Config
+	json.Unmarshal([]byte(appDescriptorData), &appDescriptor)
+
+	importPattern := regexp.MustCompile(`^([^ ]* )?([^@]*)@?(.*)?$`) // extract import path even if there is an alias and/or a version
+
+	// list existing imports in JSON to avoid duplicates
+	existingImports := make(map[string]bool)
+	for _, e := range appDescriptor.Imports {
+		importPath := importPattern.FindStringSubmatch(e)[2]
+		existingImports[importPath] = true
+	}
+
+	for _, i := range imports {
+		if _, ok := existingImports[i]; !ok {
+			appDescriptor.Imports = append(appDescriptor.Imports, importPattern.FindStringSubmatch(i)[2])
+		}
+	}
+
+	appDescriptorUpdated, err := json.MarshalIndent(appDescriptor, "", "  ")
+	if err != nil {
+		return err
+	}
+
+	appDescriptorUpdatedJson := string(appDescriptorUpdated)
+
+	err = ioutil.WriteFile(appDescriptorFile, []byte(appDescriptorUpdatedJson), 0644)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (p *appProjectImpl) AddImports(ignoreError bool, imports ...string) error {
+	err := p.addImportsInGo(ignoreError, imports...) // begin with Go imports as they are more likely to fail
+	if err != nil {
+		return err
+	}
+	err = p.addImportsInJson(ignoreError, imports...) // adding imports in JSON after Go imports ensure the flogo.json is self-sufficient
+
+	return err
 }
 
 func (p *appProjectImpl) RemoveImports(imports ...string) error {
