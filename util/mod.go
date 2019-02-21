@@ -63,6 +63,7 @@ func (m *ModDepManager) AddDependency(path, version string, fetch bool) (string,
 		if err != nil {
 			return "", err
 		}
+		return path, nil
 	}
 
 	//note: hack, because go get isn't picking up latest
@@ -72,6 +73,7 @@ func (m *ModDepManager) AddDependency(path, version string, fetch bool) (string,
 		if err != nil {
 			return "", err
 		}
+		return path, nil
 	}
 
 	// use "go mod edit" instead of "go get -u", "go mod verify" will ensure dependencies at the end of imports
