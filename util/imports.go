@@ -1,0 +1,129 @@
+package util
+
+import (
+	"errors"
+	"fmt"
+	"regexp"
+)
+
+/* util.Import struct defines the different fields which can be extracted from a Flogo import
+these imports are stored in flogo.json in the "imports" array, for instance:
+
+ "imports": [
+   "github.com/project-flogo/contrib@v0.9.0-alpha.4:/activity/log",
+   "rest_activity github.com/project-flogo/contrib@v0.9.0:/activity/rest",
+   "rest_trigger github.com/project-flogo/contrib:/trigger/rest",
+   "github.com/project-flogo/flow"
+ ]
+
+*/
+type FlogoImport struct {
+	modulePath         string
+	relativeImportPath string
+	version            string
+	alias              string
+}
+
+func NewFlogoImportFromPath(flogoImportPath string) (Import, error) {
+	flogoImport, err := ParseImport(flogoImportPath)
+	if err != nil {
+		return nil, err
+	}
+	return flogoImport, nil
+}
+
+func NewFlogoImport(modulePath, relativeImportPath, version, alias string) Import {
+	return &FlogoImport{modulePath: modulePath, relativeImportPath: relativeImportPath, version: version, alias: alias}
+}
+
+type Import interface {
+	fmt.Stringer
+
+	ModulePath() string
+	RelativeImportPath() string
+	Version() string
+	Alias() string
+
+	ImportPath() string
+	CanonicalImport() string
+	ModulePathWithVersion() string
+}
+
+type Imports []Import
+
+func (flogoImport *FlogoImport) ModulePath() string {
+	return flogoImport.modulePath
+}
+func (flogoImport *FlogoImport) RelativeImportPath() string {
+	return flogoImport.relativeImportPath
+}
+func (flogoImport *FlogoImport) Version() string {
+	return flogoImport.version
+}
+func (flogoImport *FlogoImport) Alias() string {
+	return flogoImport.alias
+}
+func (flogoImport *FlogoImport) ImportPath() string {
+	return flogoImport.modulePath + flogoImport.relativeImportPath
+}
+func (flogoImport *FlogoImport) CanonicalImport() string {
+	alias := ""
+	if flogoImport.alias != "" {
+		alias = flogoImport.alias + " "
+	}
+	version := ""
+	if flogoImport.version != "" {
+		version = "@" + flogoImport.version
+	}
+	relativeImportPath := ""
+	if flogoImport.relativeImportPath != "" {
+		relativeImportPath = ":" + flogoImport.relativeImportPath
+	}
+
+	return alias + flogoImport.modulePath + version + relativeImportPath
+}
+func (flogoImport *FlogoImport) ModulePathWithVersion() string {
+	version := "@master"
+	if flogoImport.version != "" {
+		version = "@" + flogoImport.version
+	}
+	return flogoImport.modulePath + version
+}
+func (flogoImport *FlogoImport) String() string {
+	version := ""
+	if flogoImport.version != "" {
+		version = " " + flogoImport.version
+	}
+	relativeImportPath := ""
+	if flogoImport.relativeImportPath != "" {
+		relativeImportPath = flogoImport.relativeImportPath
+	}
+
+	return flogoImport.modulePath + relativeImportPath + version
+}
+
+var flogoImportPattern = regexp.MustCompile(`^(([^ ]*)[ ]+)?([^@:]*)@?([^:]*)?:?(.*)?$`) // extract import path even if there is an alias and/or a version
+
+func ParseImports(flogoImports []string) (Imports, error) {
+	var result Imports
+
+	for _, flogoImportPath := range flogoImports {
+		flogoImport, err := ParseImport(flogoImportPath)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, flogoImport)
+	}
+
+	return result, nil
+}
+
+func ParseImport(flogoImport string) (Import, error) {
+	if !flogoImportPattern.MatchString(flogoImport) {
+		return nil, errors.New(fmt.Sprintf("The Flogo import '%s' cannot be parsed.", flogoImport))
+	}
+
+	matches := flogoImportPattern.FindStringSubmatch(flogoImport)
+	result := &FlogoImport{modulePath: matches[3], relativeImportPath: matches[5], version: matches[4], alias: matches[2]}
+	return result, nil
+}

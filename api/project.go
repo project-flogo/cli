@@ -11,7 +11,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
 	"runtime"
 
 	"github.com/project-flogo/cli/common"
@@ -104,12 +103,11 @@ func (p *appProjectImpl) Executable() string {
 	return execPath
 }
 
-func (p *appProjectImpl) GetPath(pkg string) (string, error) {
-
-	return p.dm.GetPath(pkg)
+func (p *appProjectImpl) GetPath(flogoImport util.Import) (string, error) {
+	return p.dm.GetPath(flogoImport)
 }
 
-func (p *appProjectImpl) addImportsInGo(ignoreError bool, imports ...string) error {
+func (p *appProjectImpl) addImportsInGo(ignoreError bool, imports ...util.Import) error {
 	importsFile := filepath.Join(p.SrcDir(), fileImportsGo)
 
 	fset := token.NewFileSet()
@@ -118,16 +116,16 @@ func (p *appProjectImpl) addImportsInGo(ignoreError bool, imports ...string) err
 		return err
 	}
 
-	for _, importPath := range imports {
-		importPath, err := p.DepManager().AddDependency(importPath, "", true)
+	for _, i := range imports {
+		err := p.DepManager().AddDependency(i, true)
 		if err != nil {
 			if ignoreError {
-				fmt.Printf("Warning: unable to install %s\n", importPath)
+				fmt.Printf("Warning: unable to install %s\n", i)
 				continue
 			}
 			return err
 		}
-		util.AddImport(fset, file, importPath)
+		util.AddImport(fset, file, i.ImportPath())
 	}
 
 	f, err := os.Create(importsFile)
@@ -147,7 +145,7 @@ func (p *appProjectImpl) addImportsInGo(ignoreError bool, imports ...string) err
 	return nil
 }
 
-func (p *appProjectImpl) addImportsInJson(ignoreError bool, imports ...string) error {
+func (p *appProjectImpl) addImportsInJson(ignoreError bool, imports ...util.Import) error {
 	appDescriptorFile := filepath.Join(p.appDir, fileFlogoJson)
 	appDescriptorJsonFile, err := os.Open(appDescriptorFile)
 	if err != nil {
@@ -163,18 +161,16 @@ func (p *appProjectImpl) addImportsInJson(ignoreError bool, imports ...string) e
 	var appDescriptor app.Config
 	json.Unmarshal([]byte(appDescriptorData), &appDescriptor)
 
-	importPattern := regexp.MustCompile(`^([^ ]* )?([^@]*)@?(.*)?$`) // extract import path even if there is an alias and/or a version
-
 	// list existing imports in JSON to avoid duplicates
 	existingImports := make(map[string]bool)
-	for _, e := range appDescriptor.Imports {
-		importPath := importPattern.FindStringSubmatch(e)[2]
-		existingImports[importPath] = true
+	jsonImports, _ := util.ParseImports(appDescriptor.Imports)
+	for _, e := range jsonImports {
+		existingImports[e.CanonicalImport()] = true
 	}
 
 	for _, i := range imports {
-		if _, ok := existingImports[i]; !ok {
-			appDescriptor.Imports = append(appDescriptor.Imports, importPattern.FindStringSubmatch(i)[2])
+		if _, ok := existingImports[i.CanonicalImport()]; !ok {
+			appDescriptor.Imports = append(appDescriptor.Imports, i.CanonicalImport())
 		}
 	}
 
@@ -193,7 +189,7 @@ func (p *appProjectImpl) addImportsInJson(ignoreError bool, imports ...string) e
 	return nil
 }
 
-func (p *appProjectImpl) AddImports(ignoreError bool, imports ...string) error {
+func (p *appProjectImpl) AddImports(ignoreError bool, imports ...util.Import) error {
 	err := p.addImportsInGo(ignoreError, imports...) // begin with Go imports as they are more likely to fail
 	if err != nil {
 		return err

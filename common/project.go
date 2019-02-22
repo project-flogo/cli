@@ -9,8 +9,8 @@ type AppProject interface {
 	BinDir() string
 	SrcDir() string
 	Executable() string
-	AddImports(ignoreError bool, imports ...string) error
+	AddImports(ignoreError bool, imports ...util.Import) error
 	RemoveImports(imports ...string) error
-	GetPath(pkg string) (string, error)
+	GetPath(flogoImport util.Import) (string, error)
 	DepManager() util.DepManager
 }

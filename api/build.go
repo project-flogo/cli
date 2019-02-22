@@ -81,6 +81,8 @@ func BuildProject(project common.AppProject, options BuildOptions) error {
 		fmt.Println("Path to exe is ", exePath)
 	}
 	if _, err := os.Stat(exePath); err == nil {
+		finalExePath := project.Executable()
+		os.MkdirAll(filepath.Dir(finalExePath), os.ModePerm)
 		err = os.Rename(exePath, project.Executable())
 
 		if err != nil {
@@ -125,7 +127,12 @@ func prepareShim(project common.AppProject, shim string) (bool, error) {
 				}
 			}
 
-			path, err := project.GetPath(ref)
+			refImport, err := util.NewFlogoImportFromPath(ref)
+			if err != nil {
+				return false, err
+			}
+
+			path, err := project.GetPath(refImport)
 			if err != nil {
 				return false, err
 			}
@@ -205,7 +212,12 @@ func createShimSupportGoFile(project common.AppProject, create bool) error {
 		return nil
 	}
 
-	corePath, err := project.GetPath(flogoCoreRepo)
+	flogoCoreImport, err := util.NewFlogoImportFromPath(flogoCoreRepo)
+	if err != nil {
+		return err
+	}
+
+	corePath, err := project.GetPath(flogoCoreImport)
 	if err != nil {
 		return err
 	}
