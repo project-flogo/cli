@@ -89,10 +89,11 @@ func (p *appProjectImpl) Executable() string {
 
 	var execPath string
 
-	if runtime.GOOS == "windows" || GOOSENV == "windows" {
+	execPath = filepath.Join(p.binDir, p.appName)
+
+	if GOOSENV == "windows" || (runtime.GOOS == "windows" && GOOSENV == "") {
+		// env or cross platform is windows
 		execPath = filepath.Join(p.binDir, p.appName+".exe")
-	} else {
-		execPath = filepath.Join(p.binDir, p.appName)
 	}
 
 	return execPath
@@ -114,7 +115,8 @@ func (p *appProjectImpl) AddImports(ignoreError bool, imports ...string) error {
 	}
 
 	for _, impPath := range imports {
-		err := p.DepManager().AddDependency(impPath, "", true)
+		path, version := util.ParseImportPath(impPath)
+		err := p.DepManager().AddDependency(path, version)
 		if err != nil {
 			if ignoreError {
 				fmt.Printf("Warning: unable to install %s\n", impPath)

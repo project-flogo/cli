@@ -16,7 +16,7 @@ import (
 
 type DepManager interface {
 	Init() error
-	AddDependency(path, version string, fetch bool) error
+	AddDependency(path, version string) error
 	GetPath(pkg string) (string, error)
 	AddLocalContribForBuild() error
 	InstallLocalPkg(string, string)
@@ -41,24 +41,14 @@ func (m *ModDepManager) Init() error {
 	return nil
 }
 
-func (m *ModDepManager) AddDependency(path, version string, fetch bool) error {
+func (m *ModDepManager) AddDependency(path, version string) error {
 
-	depVersion := version
-	if strings.Contains(path, "@v") {
-		fmt.Println(path)
-		depVersion = strings.Split(path, "@")[1]
-		path = strings.Split(path, "@")[0]
+	var dep string
+	if version != "" {
+		dep = path + "@" + version
+	} else {
+		dep = path + "@latest"
 	}
-
-	if len(version) == 0 {
-		//Latest changed to master. Need to clear out in future.
-		//Changed to master due to Issue in flogo-contrib/legacy-support
-		depVersion = "master"
-	} else if version != "master" && version[0] != 'v' {
-		depVersion = "v" + version
-	}
-
-	dep := path + "@" + depVersion
 
 	//note: hack, because go get doesn't add core to go.mod
 	if path == "github.com/project-flogo/core" {
