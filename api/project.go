@@ -115,7 +115,8 @@ func (p *appProjectImpl) AddImports(ignoreError bool, imports ...string) error {
 	}
 
 	for _, impPath := range imports {
-		err := p.DepManager().AddDependency(impPath, "", true)
+		path, version := util.ParseImportPath(impPath)
+		err := p.DepManager().AddDependency(path, version)
 		if err != nil {
 			if ignoreError {
 				fmt.Printf("Warning: unable to install %s\n", impPath)

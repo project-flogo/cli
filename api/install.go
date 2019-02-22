@@ -139,7 +139,7 @@ func ListPackages(project common.AppProject, format bool, all bool) error {
 			return err
 		}
 
-		fmt.Fprintf(os.Stderr, "%v \n", string(resp))
+		fmt.Fprintf(os.Stdout, "%v \n", string(resp))
 	}
 
 	return nil

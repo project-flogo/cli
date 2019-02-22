@@ -117,23 +117,9 @@ func TestCmdCreate_noflag(t *testing.T) {
 func TestCmdCreate_flag(t *testing.T) {
 	t.Log("Testing creation of project while the file is provided")
 
-	err := os.Setenv("FLOGO_BUILD_EXPERIMENTAL", "true")
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = os.Setenv("GO111MODULE", "on")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.Unsetenv("FLOGO_BUILD_EXPERIMENTAL")
 	tempDir, err := ioutil.TempDir("", "test")
 	if err != nil {
 		t.Fatal(err)
-	}
-	tempDirInfo, err := filepath.EvalSymlinks(tempDir)
-	if err == nil {
-		// Sym link
-		tempDir = tempDirInfo
 	}
 
 	testEnv := &TestEnv{currentDir: tempDir}
@@ -167,23 +153,9 @@ func TestCmdCreate_flag(t *testing.T) {
 func TestCmdCreate_masterCore(t *testing.T) {
 	t.Log("Testing creation of project when the version of core is provided `master`")
 
-	err := os.Setenv("FLOGO_BUILD_EXPERIMENTAL", "true")
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = os.Setenv("GO111MODULE", "on")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.Unsetenv("FLOGO_BUILD_EXPERIMENTAL")
 	tempDir, err := ioutil.TempDir("", "test")
 	if err != nil {
 		t.Fatal(err)
-	}
-	tempDirInfo, err := filepath.EvalSymlinks(tempDir)
-	if err == nil {
-		// Sym link
-		tempDir = tempDirInfo
 	}
 
 	testEnv := &TestEnv{currentDir: tempDir}
@@ -199,23 +171,10 @@ func TestCmdCreate_masterCore(t *testing.T) {
 
 func TestCmdCreate_versionCore(t *testing.T) {
 	t.Log("Testing creation of project when the version of core is provided `v0.9.0-alpha.3`")
-	err := os.Setenv("FLOGO_BUILD_EXPERIMENTAL", "true")
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = os.Setenv("GO111MODULE", "on")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.Unsetenv("FLOGO_BUILD_EXPERIMENTAL")
+
 	tempDir, err := ioutil.TempDir("", "test")
 	if err != nil {
 		t.Fatal(err)
-	}
-	tempDirInfo, err := filepath.EvalSymlinks(tempDir)
-	if err == nil {
-		// Sym link
-		tempDir = tempDirInfo
 	}
 
 	testEnv := &TestEnv{currentDir: tempDir}
