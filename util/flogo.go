@@ -222,7 +222,7 @@ func GetAllImports(path string) ([]string, error) {
 }
 func ParseImportPath(path string) (string, string) {
 
-	// It was @v, changed it to @ to consider the case of master
+	// If @ is speicified split
 	if strings.Contains(path, "@") {
 
 		results := strings.Split(path, "@")
