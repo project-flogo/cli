@@ -134,7 +134,25 @@ func TestInstallPkg(t *testing.T) {
 	assert.Equal(t, nil, err)
 
 }
+func TestInstallPkgWithVersion(t *testing.T) {
+	t.Log("Testing installation of package")
 
+	tempDir, _ := GetTempDir()
+
+	testEnv := &TestEnv{currentDir: tempDir}
+
+	defer testEnv.cleanup()
+
+	t.Logf("Current dir '%s'", testEnv.currentDir)
+
+	_, err := CreateProject(testEnv.currentDir, "myApp", "", "")
+
+	assert.Equal(t, nil, err)
+
+	err = InstallPackage(NewAppProject(filepath.Join(testEnv.currentDir, "myApp")), "github.com/project-flogo/contrib/activity/log@v0.9.0-alpha.3")
+	assert.Equal(t, nil, err)
+
+}
 func TestListPkg(t *testing.T) {
 	t.Log("Testing listing of packages")
 
