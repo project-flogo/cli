@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/project-flogo/cli/common"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -108,10 +109,20 @@ func TestInstallLegacyPkg(t *testing.T) {
 
 	_, err := CreateProject(testEnv.currentDir, "myApp", "", "")
 
-	assert.Equal(t, nil, err)
+	assert.Nil(t, err)
 
 	err = InstallPackage(NewAppProject(filepath.Join(testEnv.currentDir, "myApp")), "github.com/TIBCOSoftware/flogo-contrib/activity/log")
-	assert.Equal(t, nil, err)
+	assert.Nil(t, err)
+
+	appProject := NewAppProject(filepath.Join(testEnv.currentDir, "myApp"))
+
+	err = appProject.Validate()
+	assert.Nil(t, err)
+
+	common.SetCurrentProject(appProject)
+
+	err = BuildProject(common.CurrentProject(), BuildOptions{})
+	assert.Nil(t, err)
 
 }
 
@@ -128,10 +139,20 @@ func TestInstallPkg(t *testing.T) {
 
 	_, err := CreateProject(testEnv.currentDir, "myApp", "", "")
 
-	assert.Equal(t, nil, err)
+	assert.Nil(t, err)
 
 	err = InstallPackage(NewAppProject(filepath.Join(testEnv.currentDir, "myApp")), "github.com/skothari-tibco/csvtimer")
-	assert.Equal(t, nil, err)
+	assert.Nil(t, err)
+
+	appProject := NewAppProject(filepath.Join(testEnv.currentDir, "myApp"))
+
+	err = appProject.Validate()
+	assert.Nil(t, err)
+
+	common.SetCurrentProject(appProject)
+
+	err = BuildProject(common.CurrentProject(), BuildOptions{})
+	assert.Nil(t, err)
 
 }
 func TestInstallPkgWithVersion(t *testing.T) {
@@ -147,10 +168,20 @@ func TestInstallPkgWithVersion(t *testing.T) {
 
 	_, err := CreateProject(testEnv.currentDir, "myApp", "", "")
 
-	assert.Equal(t, nil, err)
+	assert.Nil(t, err)
 
 	err = InstallPackage(NewAppProject(filepath.Join(testEnv.currentDir, "myApp")), "github.com/project-flogo/contrib/activity/log@v0.9.0-alpha.3")
-	assert.Equal(t, nil, err)
+	assert.Nil(t, err)
+
+	appProject := NewAppProject(filepath.Join(testEnv.currentDir, "myApp"))
+
+	err = appProject.Validate()
+	assert.Nil(t, err)
+
+	common.SetCurrentProject(appProject)
+
+	err = BuildProject(common.CurrentProject(), BuildOptions{})
+	assert.Nil(t, err)
 
 }
 func TestListPkg(t *testing.T) {

@@ -8,73 +8,81 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/project-flogo/cli/common"
 	"github.com/stretchr/testify/assert"
 )
 
 var jsonString = `{
-    "name": "_APP_NAME_",
-    "type": "flogo:app",
-    "version": "0.0.1",
-    "description": "My flogo application description",
-    "appModel": "1.0.0",
-    "triggers": [
-      {
-        "id": "my_rest_trigger",
-        "ref": "github.com/project-flogo/contrib/trigger/rest",
-        "settings": {
-          "port": "8888"
-        },
-        "handlers": [
-          {
-            "settings": {
-              "method": "GET",
-              "path": "/test/:val"
-            },
-            "action": {
-              "ref": "github.com/project-flogo/flow",
+  "name": "_APP_NAME_",
+  "type": "flogo:app",
+  "version": "0.0.1",
+  "description": "My flogo application description",
+  "appModel": "1.0.0",
+  "imports": [
+    "github.com/TIBCOSoftware/flogo-contrib/activity/log",
+    "github.com/project-flogo/contrib/trigger/rest",
+		"github.com/project-flogo/flow"
+  ],
+  "triggers": [
+    {
+      "id": "my_rest_trigger",
+      "type": "rest",
+      "settings": {
+        "port": "8888"
+      },
+      "handlers": [
+        {
+          "settings": {
+            "method": "GET",
+            "path": "/test/:val"
+          },
+          "actions": [
+            {
+              "type": "flow",
               "settings": {
                 "flowURI": "res://flow:simple_flow"
               },
               "input": {
-                "in": "$.pathParams.val"
+                "in": "=$.pathParams.val"
+              }
+	    			}	
+	  			]
+         }
+       ]
+     }
+   ],
+  "resources": [
+    {
+      "id": "flow:simple_flow",
+      "data": {
+        "name": "simple_flow",
+        "metadata": {
+          "input": [
+            { "name": "in", "type": "string",  "value": "test" }
+          ],
+          "output": [
+            { "name": "out", "type": "string" }
+          ]
+        },
+        "tasks": [
+          {
+            "id": "log",
+            "name": "Log Message",
+            "activity": {
+              "type": "log",
+              "input": {
+                "message": "=$flow.in",
+                "flowInfo": "false",
+                "addToFlow": "false"
               }
             }
           }
-        ]
+        ],
+        "links": []
       }
-    ],
-    "resources": [
-      {
-        "id": "flow:simple_flow",
-        "data": {
-          "name": "simple_flow",
-          "metadata": {
-            "input": [
-              { "name": "in", "type": "string",  "value": "test" }
-            ],
-            "output": [
-              { "name": "out", "type": "string" }
-            ]
-          },
-          "tasks": [
-            {
-              "id": "log",
-              "name": "Log Message",
-              "activity": {
-                "ref": "github.com/project-flogo/contrib/activity/log",
-                "input": {
-                  "message": "$flow.in",
-                  "flowInfo": "false",
-                  "addToFlow": "false"
-                }
-              }
-            }
-          ],
-          "links": []
-        }
-      }
-    ]
-  }
+    }
+  ]
+}
   `
 
 type TestEnv struct {
@@ -199,4 +207,15 @@ func TestCmdCreate_versionCore(t *testing.T) {
 	assert.Equal(t, nil, err1)
 
 	assert.Equal(t, true, strings.Contains(string(data), "v0.9.0-alpha.3"))
+
+	appProject := NewAppProject(filepath.Join(testEnv.currentDir, "myApp"))
+
+	err = appProject.Validate()
+	assert.Nil(t, err)
+
+	common.SetCurrentProject(appProject)
+
+	err = BuildProject(common.CurrentProject(), BuildOptions{})
+	assert.Nil(t, err)
+
 }
