@@ -9,7 +9,6 @@ import (
 	"go/token"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"runtime"
 
@@ -117,15 +116,18 @@ func (p *appProjectImpl) addImportsInGo(ignoreError bool, imports ...util.Import
 	}
 
 	for _, i := range imports {
-		err := p.DepManager().AddDependency(i, true)
+		err := p.DepManager().AddDependency(i)
 		if err != nil {
 			if ignoreError {
-				fmt.Printf("Warning: unable to install %s\n", i)
+				fmt.Printf("Warning: unable to install '%s'\n", i)
 				continue
 			}
+
+			fmt.Errorf("Error in installing '%s'\n", i)
+
 			return err
 		}
-		util.AddImport(fset, file, i.ImportPath())
+		util.AddImport(fset, file, i.GoImportPath())
 	}
 
 	f, err := os.Create(importsFile)
@@ -135,12 +137,6 @@ func (p *appProjectImpl) addImportsInGo(ignoreError bool, imports ...util.Import
 	}
 
 	//p.dm.Finalize()
-
-	// using "go mod verify" can solve some dependencies conflicts (when contributions are dependent of others)
-	err = util.ExecCmd(exec.Command("go", "mod", "verify"), p.srcDir)
-	if err != nil {
-		return err
-	}
 
 	return nil
 }

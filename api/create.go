@@ -149,7 +149,7 @@ func setupAppDirectory(dm util.DepManager, appPath, coreVersion string) error {
 	flogoCoreImport := util.NewFlogoImport(flogoCoreRepo, "", coreVersion, "")
 
 	// add & fetch the core library
-	dm.AddDependency(flogoCoreImport, true)
+	dm.AddDependency(flogoCoreImport)
 
 	return nil
 }
@@ -194,7 +194,7 @@ func importDependencies(project common.AppProject) error {
 			fmt.Printf("%-20s %s\n", instStr, imp)
 		}
 
-		legacy, err := IsLegacySupportRequired(desc, path, imp.ImportPath(), true)
+		legacy, err := IsLegacySupportRequired(desc, path, imp.GoImportPath(), true)
 		if err != nil {
 			return err
 		}

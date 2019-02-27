@@ -11,6 +11,7 @@ these imports are stored in flogo.json in the "imports" array, for instance:
 
  "imports": [
    "github.com/project-flogo/contrib@v0.9.0-alpha.4:/activity/log",
+   "github.com/project-flogo/contrib/activity/rest@v0.9.0"
    "rest_activity github.com/project-flogo/contrib@v0.9.0:/activity/rest",
    "rest_trigger github.com/project-flogo/contrib:/trigger/rest",
    "github.com/project-flogo/flow"
@@ -44,9 +45,11 @@ type Import interface {
 	Version() string
 	Alias() string
 
-	ImportPath() string
-	CanonicalImport() string
-	ModulePathWithVersion() string
+	CanonicalImport() string // canonical import is used in flogo.json imports array and to check for equality of imports
+	GoImportPath() string    // the import path used in .go files
+	GoGetImportPath() string // the import path used by "go get" command
+	GoModImportPath() string // the import path used by "go mod edit" command
+	IsLegacy() bool          // an import is "legacy" if it does not have a relative import path
 }
 
 type Imports []Import
@@ -63,9 +66,7 @@ func (flogoImport *FlogoImport) Version() string {
 func (flogoImport *FlogoImport) Alias() string {
 	return flogoImport.alias
 }
-func (flogoImport *FlogoImport) ImportPath() string {
-	return flogoImport.modulePath + flogoImport.relativeImportPath
-}
+
 func (flogoImport *FlogoImport) CanonicalImport() string {
 	alias := ""
 	if flogoImport.alias != "" {
@@ -82,13 +83,27 @@ func (flogoImport *FlogoImport) CanonicalImport() string {
 
 	return alias + flogoImport.modulePath + version + relativeImportPath
 }
-func (flogoImport *FlogoImport) ModulePathWithVersion() string {
+func (flogoImport *FlogoImport) GoImportPath() string {
+	return flogoImport.modulePath + flogoImport.relativeImportPath
+}
+func (flogoImport *FlogoImport) GoGetImportPath() string {
+	version := "@master"
+	if flogoImport.version != "" {
+		version = "@" + flogoImport.version
+	}
+	return flogoImport.modulePath + flogoImport.relativeImportPath + version
+}
+func (flogoImport *FlogoImport) GoModImportPath() string {
 	version := "@master"
 	if flogoImport.version != "" {
 		version = "@" + flogoImport.version
 	}
 	return flogoImport.modulePath + version
 }
+func (flogoImport *FlogoImport) IsLegacy() bool {
+	return flogoImport.relativeImportPath == ""
+}
+
 func (flogoImport *FlogoImport) String() string {
 	version := ""
 	if flogoImport.version != "" {

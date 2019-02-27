@@ -5,18 +5,20 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/msoap/byline"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
 
 type DepManager interface {
 	Init() error
-	AddDependency(flogoImport Import, fetch bool) error
+	AddDependency(flogoImport Import) error
 	GetPath(flogoImport Import) (string, error)
 	AddLocalContribForBuild() error
 	InstallLocalPkg(string, string)
@@ -41,31 +43,33 @@ func (m *ModDepManager) Init() error {
 	return nil
 }
 
-func (m *ModDepManager) addDependency(path string, fetch bool) error {
-	err := ExecCmd(exec.Command("go", "mod", "edit", "-require", path), m.srcDir)
+func (m *ModDepManager) AddDependency(flogoImport Import) error {
+
+	// use "go mod edit" (instead of "go get") as first method
+	err := ExecCmd(exec.Command("go", "mod", "edit", "-require", flogoImport.GoModImportPath()), m.srcDir)
 	if err != nil {
 		return err
 	}
 
 	// force resolution
-	if fetch {
-		err = ExecCmd(exec.Command("go", "mod", "verify"), m.srcDir)
-		if err != nil {
-			return err
-
-		}
-	}
-
-	return nil
-}
-
-func (m *ModDepManager) AddDependency(flogoImport Import, fetch bool) error {
-
-	// use "go mod edit" instead of "go get -u"
-	err := m.addDependency(flogoImport.ModulePathWithVersion(), fetch)
+	// TODO: add a flag to skip download and perform download later (useful in 'flogo create' command for instance)
+	err = ExecCmd(exec.Command("go", "mod", "verify"), m.srcDir)
 
 	if err != nil {
-		fmt.Printf("Error in installing '%s'", flogoImport.String())
+		// if the resolution fails and the Flogo import is "legacy"
+		// (meaning it does not separate module path from Go import path):
+		// 1. remove the import manually ("go mod edit -droprequire") would fail
+		// 2. try with "go get" instead
+		if flogoImport.IsLegacy() {
+			m.RemoveImport(flogoImport)
+
+			err = ExecCmd(exec.Command("go", "get", "-u", flogoImport.GoGetImportPath()), m.srcDir)
+		}
+	} else {
+		err = ExecCmd(exec.Command("go", "mod", "download", flogoImport.ModulePath()), m.srcDir)
+	}
+
+	if err != nil {
 		return err
 	}
 
@@ -139,6 +143,55 @@ func (m *ModDepManager) GetPath(flogoImport Import) (string, error) {
 		}
 	}
 	return pathForPartial, nil
+}
+
+func (m *ModDepManager) RemoveImport(flogoImport Import) error {
+
+	currentDir, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+
+	modulePath := flogoImport.ModulePath()
+
+	defer os.Chdir(currentDir)
+
+	os.Chdir(m.srcDir)
+
+	file, err := os.Open(filepath.Join(m.srcDir, "go.mod"))
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	modulePath = strings.Replace(modulePath, "/", "\\/", -1)
+	modulePath = strings.Replace(modulePath, ".", "\\.", -1)
+	importRegex := regexp.MustCompile(`\s*` + modulePath + `\s+` + flogoImport.Version() + `.*`)
+
+	lr := byline.NewReader(file)
+
+	lr.MapString(func(line string) string {
+		if importRegex.MatchString(line) {
+			return ""
+		} else {
+			return line
+		}
+	})
+
+	updatedGoMod, err := lr.ReadAll()
+	if err != nil {
+		return err
+	}
+
+	file, err = os.Create(filepath.Join(m.srcDir, "go.mod"))
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	file.Write(updatedGoMod)
+
+	return nil
 }
 
 //This function converts capotal letters in package name
