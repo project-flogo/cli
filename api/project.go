@@ -124,7 +124,7 @@ func (p *appProjectImpl) AddImports(ignoreError bool, imports ...string) error {
 			}
 			return err
 		}
-		util.AddImport(fset, file, impPath)
+		util.AddImport(fset, file, path)
 	}
 
 	f, err := os.Create(importsFile)
