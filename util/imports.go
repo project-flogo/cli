@@ -49,7 +49,7 @@ type Import interface {
 	GoImportPath() string    // the import path used in .go files
 	GoGetImportPath() string // the import path used by "go get" command
 	GoModImportPath() string // the import path used by "go mod edit" command
-	IsLegacy() bool          // an import is "legacy" if it does not have a relative import path
+	IsClassic() bool         // an import is "classic" if it has no : character separator, hence no relative import path
 }
 
 type Imports []Import
@@ -100,7 +100,7 @@ func (flogoImport *FlogoImport) GoModImportPath() string {
 	}
 	return flogoImport.modulePath + version
 }
-func (flogoImport *FlogoImport) IsLegacy() bool {
+func (flogoImport *FlogoImport) IsClassic() bool {
 	return flogoImport.relativeImportPath == ""
 }
 

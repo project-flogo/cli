@@ -56,11 +56,11 @@ func (m *ModDepManager) AddDependency(flogoImport Import) error {
 	err = ExecCmd(exec.Command("go", "mod", "download", flogoImport.ModulePath()), m.srcDir)
 
 	if err != nil {
-		// if the resolution fails and the Flogo import is "legacy"
+		// if the resolution fails and the Flogo import is "classic"
 		// (meaning it does not separate module path from Go import path):
 		// 1. remove the import manually ("go mod edit -droprequire") would fail
 		// 2. try with "go get" instead
-		if flogoImport.IsLegacy() {
+		if flogoImport.IsClassic() {
 			m.RemoveImport(flogoImport)
 
 			err = ExecCmd(exec.Command("go", "get", "-u", flogoImport.GoGetImportPath()), m.srcDir)
