@@ -87,14 +87,14 @@ func (flogoImport *FlogoImport) GoImportPath() string {
 	return flogoImport.modulePath + flogoImport.relativeImportPath
 }
 func (flogoImport *FlogoImport) GoGetImportPath() string {
-	version := "@master"
+	version := "@latest"
 	if flogoImport.version != "" {
 		version = "@" + flogoImport.version
 	}
 	return flogoImport.modulePath + flogoImport.relativeImportPath + version
 }
 func (flogoImport *FlogoImport) GoModImportPath() string {
-	version := "@master"
+	version := "@latest"
 	if flogoImport.version != "" {
 		version = "@" + flogoImport.version
 	}
