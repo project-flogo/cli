@@ -146,9 +146,10 @@ func setupAppDirectory(dm util.DepManager, appPath, coreVersion string) error {
 
 	fmt.Println("installing core")
 
-	// add & fetch the core library
+	flogoCoreImport := util.NewFlogoImport(flogoCoreRepo, "", coreVersion, "")
 
-	dm.AddDependency(flogoCoreRepo, coreVersion)
+	// add & fetch the core library
+	dm.AddDependency(flogoCoreImport)
 
 	return nil
 }
@@ -193,7 +194,7 @@ func importDependencies(project common.AppProject) error {
 			fmt.Printf("%-20s %s\n", instStr, imp)
 		}
 
-		legacy, err := IsLegacySupportRequired(desc, path, imp, true)
+		legacy, err := IsLegacySupportRequired(desc, path, imp.GoImportPath(), true)
 		if err != nil {
 			return err
 		}
@@ -211,7 +212,12 @@ func importDependencies(project common.AppProject) error {
 
 func createMain(dm util.DepManager, appDir string) error {
 
-	corePath, err := dm.GetPath(flogoCoreRepo)
+	flogoCoreImport, err := util.NewFlogoImportFromPath(flogoCoreRepo)
+	if err != nil {
+		return err
+	}
+
+	corePath, err := dm.GetPath(flogoCoreImport)
 	if err != nil {
 		return err
 	}
@@ -234,7 +240,12 @@ func getAndUpdateAppJson(dm util.DepManager, appName, appJson string) (string, e
 	if len(appJson) == 0 {
 
 		// appJson wasn't provided, so lets grab the example
-		corePath, err := dm.GetPath(flogoCoreRepo)
+		flogoCoreImport, err := util.NewFlogoImportFromPath(flogoCoreRepo)
+		if err != nil {
+			return "", err
+		}
+
+		corePath, err := dm.GetPath(flogoCoreImport)
 		if err != nil {
 			return "", err
 		}

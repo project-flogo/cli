@@ -59,7 +59,12 @@ func registerImport(project common.AppProject, anImport string) error {
 
 func getContribType(project common.AppProject, ref string) (string, error) {
 
-	path, err := project.GetPath(ref)
+	refAsFlogoImport, err := util.NewFlogoImportFromPath(ref)
+	if err != nil {
+		return "", err
+	}
+
+	path, err := project.GetPath(refAsFlogoImport)
 	if err != nil {
 		return "", err
 	}
