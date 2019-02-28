@@ -87,7 +87,7 @@ func GetContribDescriptor(path string) (*FlogoContribDescriptor, error) {
 }
 
 // ParseAppDescriptor parse the application descriptor
-func GetImports(appJsonPath string) ([]string, error) {
+func GetImports(appJsonPath string) (Imports, error) {
 
 	importSet := make(map[string]struct{})
 
@@ -116,7 +116,16 @@ func GetImports(appJsonPath string) ([]string, error) {
 		allImports = append(allImports, key)
 	}
 
-	return allImports, nil
+	var result Imports
+	for _, i := range allImports {
+		parsedImport, err := ParseImport(i)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, parsedImport)
+	}
+
+	return result, nil
 }
 
 func getImports(appJsonPath string) ([]string, error) {

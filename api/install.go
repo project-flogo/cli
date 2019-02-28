@@ -15,12 +15,17 @@ import (
 
 func InstallPackage(project common.AppProject, pkg string) error {
 
-	err := project.AddImports(false, pkg)
+	flogoImport, err := util.ParseImport(pkg)
 	if err != nil {
 		return err
 	}
 
-	path, err := project.GetPath(pkg)
+	err = project.AddImports(false, flogoImport)
+	if err != nil {
+		return err
+	}
+
+	path, err := project.GetPath(flogoImport)
 	if Verbose() {
 		fmt.Println("Installed path", path)
 	}
@@ -72,6 +77,7 @@ func InstallPalette(project common.AppProject, path string) error {
 	return nil
 
 }
+
 func ListPackages(project common.AppProject, format bool, all bool) error {
 
 	err := util.ExecCmd(exec.Command("go", "mod", "tidy"), project.SrcDir())
@@ -80,21 +86,21 @@ func ListPackages(project common.AppProject, format bool, all bool) error {
 		return err
 	}
 
-	var contribs []string
+	var contribs util.Imports
 
 	if all {
-		contribs, _ = util.GetAllImports(filepath.Join(project.SrcDir(), fileImportsGo)) // Get Imports from imports.go
-
+		imports, _ := util.GetAllImports(filepath.Join(project.SrcDir(), fileImportsGo)) // Get Imports from imports.go
+		for _, i := range imports {
+			flogoImport, _ := util.ParseImport(i)
+			contribs = append(contribs, flogoImport)
+		}
 	} else {
 		contribs, _ = util.GetImports(filepath.Join(project.Dir(), fileFlogoJson)) // Get Imports from flogo.json
-
 	}
 
 	var result []interface{}
 
 	for _, contrib := range contribs {
-		contrib = clearVersion(contrib)
-
 		path, err := project.GetPath(contrib)
 		if Verbose() {
 			fmt.Println("Path of contrib", path, "for contrib", contrib)
@@ -127,7 +133,7 @@ func ListPackages(project common.AppProject, format bool, all bool) error {
 			desc.Type,
 			desc.Description,
 			desc.Homepage,
-			contrib,
+			contrib.ModulePath(),
 			getDescriptorFile(path),
 		}
 
@@ -156,13 +162,4 @@ func getDescriptorFile(path string) string {
 		}
 	}
 	return ""
-}
-func clearVersion(pkg string) string {
-
-	if strings.Contains(pkg, "@") {
-
-		return strings.Split(pkg, "@")[0]
-
-	}
-	return pkg
 }

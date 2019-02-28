@@ -5,19 +5,21 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/msoap/byline"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
 
 type DepManager interface {
 	Init() error
-	AddDependency(path, version string) error
-	GetPath(pkg string) (string, error)
+	AddDependency(flogoImport Import) error
+	GetPath(flogoImport Import) (string, error)
 	AddLocalContribForBuild() error
 	InstallLocalPkg(string, string)
 }
@@ -41,35 +43,31 @@ func (m *ModDepManager) Init() error {
 	return nil
 }
 
-func (m *ModDepManager) AddDependency(path, version string) error {
+func (m *ModDepManager) AddDependency(flogoImport Import) error {
 
-	var dep string
-	if version != "" {
-		dep = path + "@" + version
-	} else {
-		dep = path + "@latest"
-	}
-
-	//note: hack, because go get doesn't add core to go.mod
-	if path == "github.com/project-flogo/core" {
-		err := ExecCmd(exec.Command("go", "mod", "edit", "-require", dep), m.srcDir)
-		if err != nil {
-			return err
-		}
-	}
-
-	//note: hack, because go get isn't picking up latest
-	if strings.HasPrefix(path, "github.com/TIBCOSoftware/flogo-contrib") {
-		version = getLatestVersion("github.com/TIBCOSoftware/flogo-contrib")
-		err := ExecCmd(exec.Command("go", "mod", "edit", "-require", "github.com/TIBCOSoftware/flogo-contrib@"+version), m.srcDir)
-		if err != nil {
-			return err
-		}
-	}
-
-	err := ExecCmd(exec.Command("go", "get", "-u", dep), m.srcDir)
+	// use "go mod edit" (instead of "go get") as first method
+	err := ExecCmd(exec.Command("go", "mod", "edit", "-require", flogoImport.GoModImportPath()), m.srcDir)
 	if err != nil {
-		fmt.Println("Error in installing", dep)
+		return err
+	}
+
+	// force resolution
+	// TODO: add a flag to skip download and perform download later (useful in 'flogo create' command for instance)
+	err = ExecCmd(exec.Command("go", "mod", "download", flogoImport.ModulePath()), m.srcDir)
+
+	if err != nil {
+		// if the resolution fails and the Flogo import is "classic"
+		// (meaning it does not separate module path from Go import path):
+		// 1. remove the import manually ("go mod edit -droprequire") would fail
+		// 2. try with "go get" instead
+		if flogoImport.IsClassic() {
+			m.RemoveImport(flogoImport)
+
+			err = ExecCmd(exec.Command("go", "get", "-u", flogoImport.GoGetImportPath()), m.srcDir)
+		}
+	}
+
+	if err != nil {
 		return err
 	}
 
@@ -77,12 +75,14 @@ func (m *ModDepManager) AddDependency(path, version string) error {
 }
 
 // GetPath gets the path of where the
-func (m *ModDepManager) GetPath(pkg string) (string, error) {
+func (m *ModDepManager) GetPath(flogoImport Import) (string, error) {
 
 	currentDir, err := os.Getwd()
 	if err != nil {
 		return "", err
 	}
+
+	pkg := flogoImport.ModulePath()
 
 	path, ok := m.localMods[pkg]
 	if ok && path != "" {
@@ -136,11 +136,60 @@ func (m *ModDepManager) GetPath(pkg string) (string, error) {
 
 				pathForPartial = filepath.Join(os.Getenv("GOPATH"), "pkg", "mod", pkgPath, remainingPath)
 			} else {
-				return filepath.Join(os.Getenv("GOPATH"), "pkg", "mod", pkgPath), nil
+				return filepath.Join(os.Getenv("GOPATH"), "pkg", "mod", pkgPath, flogoImport.RelativeImportPath()), nil
 			}
 		}
 	}
 	return pathForPartial, nil
+}
+
+func (m *ModDepManager) RemoveImport(flogoImport Import) error {
+
+	currentDir, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+
+	modulePath := flogoImport.ModulePath()
+
+	defer os.Chdir(currentDir)
+
+	os.Chdir(m.srcDir)
+
+	file, err := os.Open(filepath.Join(m.srcDir, "go.mod"))
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	modulePath = strings.Replace(modulePath, "/", "\\/", -1)
+	modulePath = strings.Replace(modulePath, ".", "\\.", -1)
+	importRegex := regexp.MustCompile(`\s*` + modulePath + `\s+` + flogoImport.Version() + `.*`)
+
+	lr := byline.NewReader(file)
+
+	lr.MapString(func(line string) string {
+		if importRegex.MatchString(line) {
+			return ""
+		} else {
+			return line
+		}
+	})
+
+	updatedGoMod, err := lr.ReadAll()
+	if err != nil {
+		return err
+	}
+
+	file, err = os.Create(filepath.Join(m.srcDir, "go.mod"))
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	file.Write(updatedGoMod)
+
+	return nil
 }
 
 //This function converts capotal letters in package name
