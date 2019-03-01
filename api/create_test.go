@@ -45,8 +45,8 @@ var jsonString = `{
               "input": {
                 "in": "=$.pathParams.val"
               }
-	    			}	
-	  			]
+            }
+					]
          }
        ]
      }
@@ -94,7 +94,6 @@ func (t *TestEnv) getTestwd() (dir string, err error) {
 }
 
 func (t *TestEnv) cleanup() {
-
 	os.RemoveAll(t.currentDir)
 }
 
@@ -107,7 +106,11 @@ func TestCmdCreate_noflag(t *testing.T) {
 	defer testEnv.cleanup()
 
 	t.Logf("Current dir '%s'", testEnv.currentDir)
-	_, err := CreateProject(testEnv.currentDir, "myApp", "", "")
+
+	err := os.Chdir(testEnv.currentDir)
+	assert.Equal(t, nil, err)
+
+	_, err = CreateProject(testEnv.currentDir, "myApp", "", "", false)
 	assert.Equal(t, nil, err)
 
 	_, err = os.Stat(filepath.Join(tempDir, "myApp", "src", "go.mod"))
@@ -135,7 +138,10 @@ func TestCmdCreate_flag(t *testing.T) {
 	defer testEnv.cleanup()
 
 	t.Logf("Current dir '%s'", testEnv.currentDir)
-	os.Chdir(testEnv.currentDir)
+
+	err = os.Chdir(testEnv.currentDir)
+	assert.Equal(t, nil, err)
+
 	file, err := os.Create("flogo.json")
 	if err != nil {
 		t.Fatal(err)
@@ -143,7 +149,7 @@ func TestCmdCreate_flag(t *testing.T) {
 	}
 	defer file.Close()
 	fmt.Fprintf(file, jsonString)
-	_, err = CreateProject(testEnv.currentDir, "flogo", "flogo.json", "")
+	_, err = CreateProject(testEnv.currentDir, "flogo", "flogo.json", "", false)
 	assert.Equal(t, nil, err)
 
 	_, err = os.Stat(filepath.Join(tempDir, "flogo", "src", "go.mod"))
@@ -172,7 +178,10 @@ func TestCmdCreate_masterCore(t *testing.T) {
 
 	t.Logf("Current dir '%s'", testEnv.currentDir)
 
-	_, err = CreateProject(testEnv.currentDir, "myApp", "", "master")
+	err = os.Chdir(testEnv.currentDir)
+	assert.Equal(t, nil, err)
+
+	_, err = CreateProject(testEnv.currentDir, "myApp", "", "master", false)
 	assert.Equal(t, nil, err)
 
 }
@@ -190,7 +199,11 @@ func TestCmdCreate_versionCore(t *testing.T) {
 	defer testEnv.cleanup()
 
 	t.Logf("Current dir '%s'", testEnv.currentDir)
-	_, err = CreateProject(testEnv.currentDir, "myApp", "", "v0.9.0-alpha.3")
+
+	err = os.Chdir(testEnv.currentDir)
+	assert.Equal(t, nil, err)
+
+	_, err = CreateProject(testEnv.currentDir, "myApp", "", "v0.9.0-alpha.3", false)
 	assert.Equal(t, nil, err)
 
 	_, err = os.Stat(filepath.Join(tempDir, "myApp", "src", "go.mod"))
@@ -206,7 +219,7 @@ func TestCmdCreate_versionCore(t *testing.T) {
 	data, err1 := ioutil.ReadFile(filepath.Join(tempDir, "myApp", "src", "go.mod"))
 	assert.Equal(t, nil, err1)
 
-	assert.Equal(t, true, strings.Contains(string(data), "v0.9.0-alpha.3"))
+	assert.Equal(t, true, strings.Contains(string(data), "v0.9.0"))
 
 	appProject := NewAppProject(filepath.Join(testEnv.currentDir, "myApp"))
 

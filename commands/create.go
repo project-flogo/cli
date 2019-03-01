@@ -8,10 +8,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var flogoJsonPath string
-var coreVersion string
+var (
+	flogoJSONPath string
+	coreVersion   string
+	forceCreate   bool
+)
 
-var CreateCmd = &cobra.Command{
+var createCmd = &cobra.Command{
 	Use:              "create [flags] [appName]",
 	Short:            "create a flogo application project",
 	Long:             `Creates a flogo application project.`,
@@ -32,7 +35,7 @@ var CreateCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		_, err = api.CreateProject(currentDir, appName, flogoJsonPath, coreVersion)
+		_, err = api.CreateProject(currentDir, appName, flogoJSONPath, coreVersion, forceCreate)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
@@ -41,7 +44,8 @@ var CreateCmd = &cobra.Command{
 }
 
 func init() {
-	CreateCmd.Flags().StringVarP(&flogoJsonPath, "file", "f", "", "path to flogo.json file")
-	CreateCmd.Flags().StringVarP(&coreVersion, "core", "c", "", "specify core library version")
-	rootCmd.AddCommand(CreateCmd)
+	createCmd.Flags().StringVarP(&flogoJSONPath, "file", "f", "", "path to flogo.json file")
+	createCmd.Flags().StringVarP(&coreVersion, "core", "c", "", "specify core library version")
+	createCmd.Flags().BoolVar(&forceCreate, "force", false, "force install when go get fails")
+	rootCmd.AddCommand(createCmd)
 }

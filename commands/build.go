@@ -11,17 +11,20 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var buildShim string
-
-var buildOptimize bool
-var buildEmbed bool
-var jsonFile string
+var (
+	buildShim     string
+	buildOptimize bool
+	buildEmbed    bool
+	jsonFile      string
+	forceBuild    bool
+)
 
 func init() {
 	buildCmd.Flags().StringVarP(&buildShim, "shim", "", "", "trigger shim")
 	buildCmd.Flags().BoolVarP(&buildOptimize, "optimize", "o", false, "optimize build")
 	buildCmd.Flags().BoolVarP(&buildEmbed, "embed", "e", false, "embed config")
 	buildCmd.Flags().StringVarP(&jsonFile, "file", "f", "", "json file")
+	buildCmd.Flags().BoolVar(&forceBuild, "force", false, "force install when go get fails")
 	rootCmd.AddCommand(buildCmd)
 }
 
@@ -55,7 +58,7 @@ var buildCmd = &cobra.Command{
 			}
 
 			api.SetVerbose(verbose)
-			tempProject, err := api.CreateProject(tempDir, "", jsonFile, "master")
+			tempProject, err := api.CreateProject(tempDir, "", jsonFile, "master", forceBuild)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 				os.Exit(1)

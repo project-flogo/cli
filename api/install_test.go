@@ -107,11 +107,14 @@ func TestInstallLegacyPkg(t *testing.T) {
 
 	t.Logf("Current dir '%s'", testEnv.currentDir)
 
-	_, err := CreateProject(testEnv.currentDir, "myApp", "", "")
+	err := os.Chdir(tempDir)
+	assert.Equal(t, nil, err)
+
+	_, err = CreateProject(testEnv.currentDir, "myApp", "", "", false)
 
 	assert.Nil(t, err)
 
-	err = InstallPackage(NewAppProject(filepath.Join(testEnv.currentDir, "myApp")), "github.com/TIBCOSoftware/flogo-contrib/activity/log")
+	err = InstallPackage(NewAppProject(filepath.Join(testEnv.currentDir, "myApp")), "github.com/TIBCOSoftware/flogo-contrib/activity/log", false)
 	assert.Nil(t, err)
 
 	appProject := NewAppProject(filepath.Join(testEnv.currentDir, "myApp"))
@@ -137,11 +140,14 @@ func TestInstallPkg(t *testing.T) {
 
 	t.Logf("Current dir '%s'", testEnv.currentDir)
 
-	_, err := CreateProject(testEnv.currentDir, "myApp", "", "")
+	err := os.Chdir(tempDir)
+	assert.Equal(t, nil, err)
+
+	_, err = CreateProject(testEnv.currentDir, "myApp", "", "", false)
 
 	assert.Nil(t, err)
 
-	err = InstallPackage(NewAppProject(filepath.Join(testEnv.currentDir, "myApp")), "github.com/skothari-tibco/csvtimer")
+	err = InstallPackage(NewAppProject(filepath.Join(testEnv.currentDir, "myApp")), "github.com/skothari-tibco/csvtimer", false)
 	assert.Nil(t, err)
 
 	appProject := NewAppProject(filepath.Join(testEnv.currentDir, "myApp"))
@@ -166,11 +172,14 @@ func TestInstallPkgWithVersion(t *testing.T) {
 
 	t.Logf("Current dir '%s'", testEnv.currentDir)
 
-	_, err := CreateProject(testEnv.currentDir, "myApp", "", "")
+	err := os.Chdir(tempDir)
+	assert.Equal(t, nil, err)
+
+	_, err = CreateProject(testEnv.currentDir, "myApp", "", "", false)
 
 	assert.Nil(t, err)
 
-	err = InstallPackage(NewAppProject(filepath.Join(testEnv.currentDir, "myApp")), "github.com/project-flogo/contrib/activity/log@v0.9.0-alpha.3")
+	err = InstallPackage(NewAppProject(filepath.Join(testEnv.currentDir, "myApp")), "github.com/project-flogo/contrib/activity/log@v0.9.0-alpha.3", false)
 	assert.Nil(t, err)
 
 	appProject := NewAppProject(filepath.Join(testEnv.currentDir, "myApp"))
@@ -195,7 +204,10 @@ func TestListPkg(t *testing.T) {
 
 	t.Logf("Current dir '%s'", testEnv.currentDir)
 
-	_, err := CreateProject(testEnv.currentDir, "myApp", "", "")
+	err := os.Chdir(tempDir)
+	assert.Equal(t, nil, err)
+
+	_, err = CreateProject(testEnv.currentDir, "myApp", "", "", false)
 
 	assert.Equal(t, nil, err)
 
@@ -215,7 +227,10 @@ func TestListAllPkg(t *testing.T) {
 
 	t.Logf("Current dir '%s'", testEnv.currentDir)
 
-	_, err := CreateProject(testEnv.currentDir, "myApp", "", "")
+	err := os.Chdir(tempDir)
+	assert.Equal(t, nil, err)
+
+	_, err = CreateProject(testEnv.currentDir, "myApp", "", "", false)
 
 	assert.Equal(t, nil, err)
 
@@ -236,6 +251,7 @@ func TestListWithLegacyPkg(t *testing.T) {
 	t.Logf("Current dir '%s'", testEnv.currentDir)
 
 	err := os.Chdir(tempDir)
+	assert.Equal(t, nil, err)
 
 	file, err := os.Create("flogo.json")
 	if err != nil {
@@ -244,7 +260,7 @@ func TestListWithLegacyPkg(t *testing.T) {
 	}
 	defer file.Close()
 	fmt.Fprintf(file, newJsonString)
-	_, err = CreateProject(testEnv.currentDir, "temp", "flogo.json", "")
+	_, err = CreateProject(testEnv.currentDir, "temp", "flogo.json", "", false)
 	assert.Equal(t, nil, err)
 
 	err = ListPackages(NewAppProject(filepath.Join(testEnv.currentDir, "temp")), true, false)

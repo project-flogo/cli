@@ -13,14 +13,14 @@ import (
 	"github.com/project-flogo/cli/util"
 )
 
-func InstallPackage(project common.AppProject, pkg string) error {
+func InstallPackage(project common.AppProject, pkg string, force bool) error {
 
 	flogoImport, err := util.ParseImport(pkg)
 	if err != nil {
 		return err
 	}
 
-	err = project.AddImports(false, flogoImport)
+	err = project.AddImports(false, force, flogoImport)
 	if err != nil {
 		return err
 	}
@@ -34,6 +34,9 @@ func InstallPackage(project common.AppProject, pkg string) error {
 	}
 
 	desc, err := util.GetContribDescriptor(path)
+	if err != nil {
+		return err
+	}
 	if desc != nil {
 		fmt.Printf("Installed %s: %s\n", desc.GetContribType(), pkg)
 	}
@@ -49,13 +52,15 @@ func InstallPackage(project common.AppProject, pkg string) error {
 
 	return nil
 }
+
 func InstallLocalPackage(project common.AppProject, localPath string, pkg string) error {
 
 	project.DepManager().InstallLocalPkg(pkg, localPath)
 
-	return InstallPackage(project, pkg)
+	return InstallPackage(project, pkg, false)
 }
-func InstallPalette(project common.AppProject, path string) error {
+
+func InstallPalette(project common.AppProject, path string, force bool) error {
 
 	file, err := ioutil.ReadFile(path)
 
@@ -71,7 +76,7 @@ func InstallPalette(project common.AppProject, path string) error {
 	}
 
 	for _, palette := range paletteDescriptor {
-		InstallPackage(project, fmt.Sprintf("%v", palette.Reference))
+		InstallPackage(project, fmt.Sprintf("%v", palette.Reference), force)
 	}
 
 	return nil
@@ -150,6 +155,7 @@ func ListPackages(project common.AppProject, format bool, all bool) error {
 
 	return nil
 }
+
 func getDescriptorFile(path string) string {
 	files, err := ioutil.ReadDir(path)
 	if err != nil {

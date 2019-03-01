@@ -39,7 +39,7 @@ func InstallLegacySupport(project common.AppProject) error {
 	if err != nil {
 		return err
 	}
-	err = project.AddImports(false, pkgLegacySupportImport)
+	err = project.AddImports(false, false, pkgLegacySupportImport)
 	if err == nil {
 		fmt.Println("Installed Legacy Support")
 	}

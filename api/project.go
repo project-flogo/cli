@@ -106,7 +106,7 @@ func (p *appProjectImpl) GetPath(flogoImport util.Import) (string, error) {
 	return p.dm.GetPath(flogoImport)
 }
 
-func (p *appProjectImpl) addImportsInGo(ignoreError bool, imports ...util.Import) error {
+func (p *appProjectImpl) addImportsInGo(ignoreError, force bool, imports ...util.Import) error {
 	importsFile := filepath.Join(p.SrcDir(), fileImportsGo)
 
 	fset := token.NewFileSet()
@@ -117,13 +117,13 @@ func (p *appProjectImpl) addImportsInGo(ignoreError bool, imports ...util.Import
 
 	for _, i := range imports {
 		err := p.DepManager().AddDependency(i)
-		if err != nil {
+		if err != nil && !force {
 			if ignoreError {
 				fmt.Printf("Warning: unable to install '%s'\n", i)
 				continue
 			}
 
-			fmt.Errorf("Error in installing '%s'\n", i)
+			fmt.Printf("Error in installing '%s'\n", i)
 
 			return err
 		}
@@ -131,6 +131,9 @@ func (p *appProjectImpl) addImportsInGo(ignoreError bool, imports ...util.Import
 	}
 
 	f, err := os.Create(importsFile)
+	if err != nil {
+		return err
+	}
 	defer f.Close()
 	if err := printer.Fprint(f, fset, file); err != nil {
 		return err
@@ -141,15 +144,15 @@ func (p *appProjectImpl) addImportsInGo(ignoreError bool, imports ...util.Import
 	return nil
 }
 
-func (p *appProjectImpl) addImportsInJson(ignoreError bool, imports ...util.Import) error {
+func (p *appProjectImpl) addImportsInJson(ignoreError, force bool, imports ...util.Import) error {
 	appDescriptorFile := filepath.Join(p.appDir, fileFlogoJson)
-	appDescriptorJsonFile, err := os.Open(appDescriptorFile)
+	appDescriptorJSONFile, err := os.Open(appDescriptorFile)
 	if err != nil {
 		return err
 	}
-	defer appDescriptorJsonFile.Close()
+	defer appDescriptorJSONFile.Close()
 
-	appDescriptorData, err := ioutil.ReadAll(appDescriptorJsonFile)
+	appDescriptorData, err := ioutil.ReadAll(appDescriptorJSONFile)
 	if err != nil {
 		return err
 	}
@@ -175,9 +178,9 @@ func (p *appProjectImpl) addImportsInJson(ignoreError bool, imports ...util.Impo
 		return err
 	}
 
-	appDescriptorUpdatedJson := string(appDescriptorUpdated)
+	appDescriptorUpdatedJSON := string(appDescriptorUpdated)
 
-	err = ioutil.WriteFile(appDescriptorFile, []byte(appDescriptorUpdatedJson), 0644)
+	err = ioutil.WriteFile(appDescriptorFile, []byte(appDescriptorUpdatedJSON), 0644)
 	if err != nil {
 		return err
 	}
@@ -185,12 +188,12 @@ func (p *appProjectImpl) addImportsInJson(ignoreError bool, imports ...util.Impo
 	return nil
 }
 
-func (p *appProjectImpl) AddImports(ignoreError bool, imports ...util.Import) error {
-	err := p.addImportsInGo(ignoreError, imports...) // begin with Go imports as they are more likely to fail
+func (p *appProjectImpl) AddImports(ignoreError, force bool, imports ...util.Import) error {
+	err := p.addImportsInGo(ignoreError, force, imports...) // begin with Go imports as they are more likely to fail
 	if err != nil {
 		return err
 	}
-	err = p.addImportsInJson(ignoreError, imports...) // adding imports in JSON after Go imports ensure the flogo.json is self-sufficient
+	err = p.addImportsInJson(ignoreError, force, imports...) // adding imports in JSON after Go imports ensure the flogo.json is self-sufficient
 
 	return err
 }

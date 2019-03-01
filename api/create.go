@@ -15,7 +15,7 @@ import (
 var fileSampleFlogoJson = filepath.Join("examples", "engine", "flogo.json")
 var fileSampleEngineMain = filepath.Join("examples", "engine", "main.go")
 
-func CreateProject(basePath, appName, appCfgPath, coreVersion string) (common.AppProject, error) {
+func CreateProject(basePath, appName, appCfgPath, coreVersion string, force bool) (common.AppProject, error) {
 
 	var err error
 	var appJson string
@@ -83,7 +83,7 @@ func CreateProject(basePath, appName, appCfgPath, coreVersion string) (common.Ap
 	if Verbose() {
 		fmt.Println("Importing Dependencies...")
 	}
-	err = importDependencies(project)
+	err = importDependencies(project, force)
 	if err != nil {
 		return nil, err
 	}
@@ -171,13 +171,13 @@ func createAppJson(dm util.DepManager, appDir, appName, appJson string) error {
 }
 
 // importDependencies import all dependencies
-func importDependencies(project common.AppProject) error {
+func importDependencies(project common.AppProject, force bool) error {
 	imports, err := util.GetImports(filepath.Join(project.Dir(), fileFlogoJson))
 	if err != nil {
 		return err
 	}
 
-	project.AddImports(true, imports...)
+	project.AddImports(true, force, imports...)
 
 	legacySupportRequired := false
 	for _, imp := range imports {
