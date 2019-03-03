@@ -63,7 +63,7 @@ func (m *ModDepManager) AddDependency(flogoImport Import) error {
 		if flogoImport.IsClassic() {
 			m.RemoveImport(flogoImport)
 
-			err = ExecCmd(exec.Command("go", "get", "-u", flogoImport.GoGetImportPath()), m.srcDir)
+			err = ExecCmd(exec.Command("go", "get", flogoImport.GoGetImportPath()), m.srcDir)
 		}
 	}
 
