@@ -53,7 +53,10 @@ func (m *ModDepManager) AddDependency(flogoImport Import) error {
 
 	// force resolution
 	// TODO: add a flag to skip download and perform download later (useful in 'flogo create' command for instance)
-	err = ExecCmd(exec.Command("go", "mod", "download", flogoImport.ModulePath()), m.srcDir)
+	err = ExecCmd(exec.Command("go", "mod", "verify"), m.srcDir)
+	if err == nil {
+		err = ExecCmd(exec.Command("go", "mod", "download", flogoImport.ModulePath()), m.srcDir)
+	}
 
 	if err != nil {
 		// if the resolution fails and the Flogo import is "classic"
@@ -63,7 +66,7 @@ func (m *ModDepManager) AddDependency(flogoImport Import) error {
 		if flogoImport.IsClassic() {
 			m.RemoveImport(flogoImport)
 
-			err = ExecCmd(exec.Command("go", "get", "-u", flogoImport.GoGetImportPath()), m.srcDir)
+			err = ExecCmd(exec.Command("go", "get", flogoImport.GoGetImportPath()), m.srcDir)
 		}
 	}
 

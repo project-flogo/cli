@@ -55,10 +55,10 @@ type FlogoContribDescriptor struct {
 	Shim        string `json:"shim"`
 }
 
-type FlogoPaletteDescriptor struct {
-	Name      string `json:"name"`
-	Version   string `json:"version"`
-	Reference string `json:"ref"`
+type FlogoContribBundleDescriptor struct {
+	Name        string   `json:"name"`
+	description string   `json:"description"`
+	Contribs    []string `json:"contributions"`
 }
 
 func (d *FlogoContribDescriptor) GetContribType() string {

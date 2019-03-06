@@ -55,7 +55,7 @@ func InstallLocalPackage(project common.AppProject, localPath string, pkg string
 
 	return InstallPackage(project, pkg)
 }
-func InstallPalette(project common.AppProject, path string) error {
+func InstallContribBundle(project common.AppProject, path string) error {
 
 	file, err := ioutil.ReadFile(path)
 
@@ -63,15 +63,15 @@ func InstallPalette(project common.AppProject, path string) error {
 		return err
 	}
 
-	var paletteDescriptor []*util.FlogoPaletteDescriptor
-	err = json.Unmarshal(file, &paletteDescriptor)
+	var contribBundleDescriptor util.FlogoContribBundleDescriptor
+	err = json.Unmarshal(file, &contribBundleDescriptor)
 
 	if err != nil {
 		return err
 	}
 
-	for _, palette := range paletteDescriptor {
-		InstallPackage(project, fmt.Sprintf("%v", palette.Reference))
+	for _, contrib := range contribBundleDescriptor.Contribs {
+		InstallPackage(project, contrib)
 	}
 
 	return nil
