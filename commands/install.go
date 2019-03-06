@@ -16,6 +16,7 @@ var installCmd = &cobra.Command{
 	Short: "install a flogo contribution",
 	Long:  "Installs a flogo contribution",
 	Run: func(cmd *cobra.Command, args []string) {
+
 		if contribBundle != "" {
 			err := api.InstallContribBundle(common.CurrentProject(), contribBundle)
 			if err != nil {
@@ -44,7 +45,7 @@ var installCmd = &cobra.Command{
 
 func init() {
 	installCmd.Flags().StringVarP(&localContrib, "localContrib", "l", "", "Specify local Contrib")
-	installCmd.Flags().StringVarP(&contribBundle, "contribBundle", "c", "", "Specify ContribBundle")
+	installCmd.Flags().StringVarP(&contribBundle, "file", "f", "", "Specify ContribBundle file")
 	rootCmd.AddCommand(installCmd)
 
 }
