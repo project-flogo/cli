@@ -71,7 +71,7 @@ func InstallContribBundle(project common.AppProject, path string) error {
 	}
 
 	for _, contrib := range contribBundleDescriptor.Contribs {
-		InstallPackage(project, fmt.Sprintf("%v", contrib))
+		InstallPackage(project, contrib)
 	}
 
 	return nil
