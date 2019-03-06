@@ -44,7 +44,7 @@ var installCmd = &cobra.Command{
 
 func init() {
 	installCmd.Flags().StringVarP(&localContrib, "localContrib", "l", "", "Specify local Contrib")
-	installCmd.Flags().StringVarP(&contribBundle, "contribBundle", "cb", "", "Specify ContribBundle")
+	installCmd.Flags().StringVarP(&contribBundle, "contribBundle", "c", "", "Specify ContribBundle")
 	rootCmd.AddCommand(installCmd)
 
 }
