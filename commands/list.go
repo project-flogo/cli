@@ -15,7 +15,7 @@ var all bool
 var listCmd = &cobra.Command{
 	Use:   "list [flags]",
 	Short: "list used flogo contributions",
-	Long:  "list used flogo contributions",
+	Long:  "List used flogo contributions",
 	Run: func(cmd *cobra.Command, args []string) {
 
 		err := api.ListPackages(common.CurrentProject(), json, all)

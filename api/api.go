@@ -19,4 +19,4 @@ func Verbose() bool {
 	return verbose
 }
 
-//TODO use a logger like struck for API that can be used to log or console output
+//TODO use a logger like struct for API that can be used to log or console output
