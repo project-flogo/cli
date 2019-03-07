@@ -123,7 +123,7 @@ func (p *appProjectImpl) addImportsInGo(ignoreError bool, imports ...util.Import
 				continue
 			}
 
-			fmt.Printf("Error in installing '%s'\n", i)
+			fmt.Fprintf(os.Stderr, "Error in installing '%s'\n", i)
 
 			return err
 		}
