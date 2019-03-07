@@ -18,6 +18,7 @@ these imports are stored in flogo.json in the "imports" array, for instance:
  ]
 
 */
+
 type FlogoImport struct {
 	modulePath         string
 	relativeImportPath string
@@ -57,12 +58,15 @@ type Imports []Import
 func (flogoImport *FlogoImport) ModulePath() string {
 	return flogoImport.modulePath
 }
+
 func (flogoImport *FlogoImport) RelativeImportPath() string {
 	return flogoImport.relativeImportPath
 }
+
 func (flogoImport *FlogoImport) Version() string {
 	return flogoImport.version
 }
+
 func (flogoImport *FlogoImport) Alias() string {
 	return flogoImport.alias
 }
@@ -83,9 +87,11 @@ func (flogoImport *FlogoImport) CanonicalImport() string {
 
 	return alias + flogoImport.modulePath + version + relativeImportPath
 }
+
 func (flogoImport *FlogoImport) GoImportPath() string {
 	return flogoImport.modulePath + flogoImport.relativeImportPath
 }
+
 func (flogoImport *FlogoImport) GoGetImportPath() string {
 	version := "@latest"
 	if flogoImport.version != "" {
@@ -93,6 +99,7 @@ func (flogoImport *FlogoImport) GoGetImportPath() string {
 	}
 	return flogoImport.modulePath + flogoImport.relativeImportPath + version
 }
+
 func (flogoImport *FlogoImport) GoModImportPath() string {
 	version := "@latest"
 	if flogoImport.version != "" {
@@ -100,6 +107,7 @@ func (flogoImport *FlogoImport) GoModImportPath() string {
 	}
 	return flogoImport.modulePath + version
 }
+
 func (flogoImport *FlogoImport) IsClassic() bool {
 	return flogoImport.relativeImportPath == ""
 }

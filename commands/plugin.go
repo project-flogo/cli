@@ -35,7 +35,7 @@ var pluginCmd = &cobra.Command{
 
 var pluginInstall = &cobra.Command{
 	Use:   "install <plugin>",
-	Short: "install plugin",
+	Short: "install cli plugin",
 	Long:  "Installs a cli plugin",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
@@ -51,11 +51,13 @@ var pluginInstall = &cobra.Command{
 		pluginPkg := args[0]
 
 		fmt.Printf("Installing plugin: %s\n", pluginPkg)
+
 		added, err := addPlugin(pluginPkg)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
 		}
+
 		if added {
 			err = updateCLI()
 			if err != nil {
@@ -64,6 +66,7 @@ var pluginInstall = &cobra.Command{
 				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 				os.Exit(1)
 			}
+
 			fmt.Printf("Installed plugin\n")
 		} else {
 			fmt.Printf("Plugin '%s' already installed\n", pluginPkg)
@@ -98,6 +101,7 @@ var pluginUpdate = &cobra.Command{
 
 		plugin := args[0]
 		fmt.Printf("Updating plugin: %s\n", plugin)
+
 		err = util.ExecCmd(exec.Command("go", "get", "-u", plugin), cliCmdPath)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)

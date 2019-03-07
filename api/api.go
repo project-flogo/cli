@@ -18,3 +18,5 @@ func SetVerbose(enable bool) {
 func Verbose() bool {
 	return verbose
 }
+
+//TODO use a logger like struck for API that can be used to log or console output
