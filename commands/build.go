@@ -12,16 +12,15 @@ import (
 )
 
 var buildShim string
-
 var buildOptimize bool
 var buildEmbed bool
-var jsonFile string
+var flogoJsonFile string
 
 func init() {
-	buildCmd.Flags().StringVarP(&buildShim, "shim", "", "", "trigger shim")
+	buildCmd.Flags().StringVarP(&buildShim, "shim", "", "", "specify shim trigger")
 	buildCmd.Flags().BoolVarP(&buildOptimize, "optimize", "o", false, "optimize build")
-	buildCmd.Flags().BoolVarP(&buildEmbed, "embed", "e", false, "embed config")
-	buildCmd.Flags().StringVarP(&jsonFile, "file", "f", "", "json file")
+	buildCmd.Flags().BoolVarP(&buildEmbed, "embed", "e", false, "embed configuration")
+	buildCmd.Flags().StringVarP(&flogoJsonFile, "file", "f", "", "specify flogo.json file")
 	rootCmd.AddCommand(buildCmd)
 }
 
@@ -33,7 +32,7 @@ var buildCmd = &cobra.Command{
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {},
 	Run: func(cmd *cobra.Command, args []string) {
 
-		if jsonFile == "" {
+		if flogoJsonFile == "" {
 			preRun(cmd, args, verbose)
 			options := api.BuildOptions{Shim: buildShim, OptimizeImports: buildOptimize, EmbedConfig: buildEmbed}
 
@@ -55,7 +54,7 @@ var buildCmd = &cobra.Command{
 			}
 
 			api.SetVerbose(verbose)
-			tempProject, err := api.CreateProject(tempDir, "", jsonFile, "master")
+			tempProject, err := api.CreateProject(tempDir, "", flogoJsonFile, "latest")
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 				os.Exit(1)
@@ -85,6 +84,7 @@ func copyBin(verbose bool, tempProject common.AppProject) {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
+
 	if verbose {
 		fmt.Printf("Copying the binary from  %s to %s \n", tempProject.BinDir(), currDir)
 	}
@@ -106,8 +106,8 @@ func copyBin(verbose bool, tempProject common.AppProject) {
 	if verbose {
 		fmt.Printf("Removing the temp dir  %s  \n ", tempProject.Dir())
 	}
-	err = os.RemoveAll(tempProject.Dir())
 
+	err = os.RemoveAll(tempProject.Dir())
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)

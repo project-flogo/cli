@@ -23,5 +23,4 @@ func TestName(t *testing.T) {
 		//pkg = pkg[1 : len(pkg)-2]
 		fmt.Printf("package: '%s'\n", pkg)
 	}
-
 }

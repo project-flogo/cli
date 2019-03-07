@@ -11,6 +11,7 @@ import (
 
 var localContrib string
 var contribBundle string
+
 var installCmd = &cobra.Command{
 	Use:   "install [flags] <contribution>",
 	Short: "install a flogo contribution",
@@ -24,6 +25,7 @@ var installCmd = &cobra.Command{
 				os.Exit(1)
 			}
 		}
+
 		if localContrib != "" {
 			err := api.InstallLocalPackage(common.CurrentProject(), localContrib, args[0])
 			if err != nil {
@@ -39,13 +41,12 @@ var installCmd = &cobra.Command{
 				}
 			}
 		}
-
 	},
 }
 
 func init() {
-	installCmd.Flags().StringVarP(&localContrib, "localContrib", "l", "", "Specify local Contrib")
-	installCmd.Flags().StringVarP(&contribBundle, "file", "f", "", "Specify ContribBundle file")
+	installCmd.Flags().StringVarP(&localContrib, "local", "l", "", "specify local contribution")
+	installCmd.Flags().StringVarP(&contribBundle, "file", "f", "", "specify contribution bundle")
 	rootCmd.AddCommand(installCmd)
 
 }

@@ -58,6 +58,7 @@ func CreateProject(basePath, appName, appCfgPath, coreVersion string) (common.Ap
 	if Verbose() {
 		fmt.Printf("Setting up app directory: %s\n", appDir)
 	}
+
 	err = setupAppDirectory(dm, appDir, coreVersion)
 	if err != nil {
 		return nil, err
@@ -83,6 +84,7 @@ func CreateProject(basePath, appName, appCfgPath, coreVersion string) (common.Ap
 	if Verbose() {
 		fmt.Println("Importing Dependencies...")
 	}
+
 	err = importDependencies(project)
 	if err != nil {
 		return nil, err
