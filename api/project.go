@@ -3,7 +3,6 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/project-flogo/core/app" // dependency to core ensures the CLI always uses an up-to-date struct for JSON manipulation (this dependency already exists implicitly in the "flogo create" command)
 	"go/parser"
 	"go/printer"
 	"go/token"
@@ -14,6 +13,7 @@ import (
 
 	"github.com/project-flogo/cli/common"
 	"github.com/project-flogo/cli/util"
+	"github.com/project-flogo/core/app" // dependency to core ensures the CLI always uses an up-to-date struct for JSON manipulation (this dependency already exists implicitly in the "flogo create" command)
 )
 
 const (
@@ -123,7 +123,7 @@ func (p *appProjectImpl) addImportsInGo(ignoreError bool, imports ...util.Import
 				continue
 			}
 
-			fmt.Errorf("Error in installing '%s'\n", i)
+			fmt.Fprintf(os.Stderr, "Error in installing '%s'\n", i)
 
 			return err
 		}

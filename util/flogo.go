@@ -57,7 +57,7 @@ type FlogoContribDescriptor struct {
 
 type FlogoContribBundleDescriptor struct {
 	Name        string   `json:"name"`
-	description string   `json:"description"`
+	Description string   `json:"description"`
 	Contribs    []string `json:"contributions"`
 }
 
@@ -70,7 +70,7 @@ func GetContribDescriptor(path string) (*FlogoContribDescriptor, error) {
 	files, err := ioutil.ReadDir(path)
 
 	if err != nil {
-		fmt.Errorf("Unable to find %v", path)
+		fmt.Fprintf(os.Stderr, "Unable to find %v", path)
 		return nil, err
 	}
 
@@ -110,9 +110,10 @@ func GetImports(appJsonPath string) (Imports, error) {
 			importSet[value] = exists
 		}
 	}
+
 	var allImports []string
 
-	for key, _ := range importSet {
+	for key := range importSet {
 		allImports = append(allImports, key)
 	}
 
@@ -177,7 +178,7 @@ func getImportsLegacy(appJsonPath string) ([]string, error) {
 
 	var imports []string
 
-	for key, _ := range importSet {
+	for key := range importSet {
 		imports = append(imports, key)
 	}
 
@@ -215,7 +216,7 @@ func GetAllImports(path string) ([]string, error) {
 	}
 	data := string(bytes)
 
-	pkgs := strings.Split(data[strings.Index(data, "(")+1:], "\n") //Get indivual rows containing pkgs.
+	pkgs := strings.Split(data[strings.Index(data, "(")+1:], "\n") //Get individual rows containing pkgs.
 
 	for _, pkg := range pkgs {
 
@@ -229,9 +230,10 @@ func GetAllImports(path string) ([]string, error) {
 
 	return results, nil
 }
+
 func ParseImportPath(path string) (string, string) {
 
-	// If @ is speicified split
+	// If @ is specified split
 	if strings.Contains(path, "@") {
 
 		results := strings.Split(path, "@")
@@ -240,5 +242,4 @@ func ParseImportPath(path string) (string, string) {
 
 	}
 	return path, ""
-
 }

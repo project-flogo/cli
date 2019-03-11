@@ -49,12 +49,14 @@ func InstallPackage(project common.AppProject, pkg string) error {
 
 	return nil
 }
+
 func InstallLocalPackage(project common.AppProject, localPath string, pkg string) error {
 
 	project.DepManager().InstallLocalPkg(pkg, localPath)
 
 	return InstallPackage(project, pkg)
 }
+
 func InstallContribBundle(project common.AppProject, path string) error {
 
 	file, err := ioutil.ReadFile(path)
@@ -75,7 +77,6 @@ func InstallContribBundle(project common.AppProject, path string) error {
 	}
 
 	return nil
-
 }
 
 func ListPackages(project common.AppProject, format bool, all bool) error {
@@ -150,6 +151,7 @@ func ListPackages(project common.AppProject, format bool, all bool) error {
 
 	return nil
 }
+
 func getDescriptorFile(path string) string {
 	files, err := ioutil.ReadDir(path)
 	if err != nil {

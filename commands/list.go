@@ -11,10 +11,11 @@ import (
 
 var json bool
 var all bool
+
 var listCmd = &cobra.Command{
-	Use:   "list [flags] <contribution>",
-	Short: "list all flogo contribution",
-	Long:  "lists a flogo contribution",
+	Use:   "list [flags]",
+	Short: "list used flogo contributions",
+	Long:  "List used flogo contributions",
 	Run: func(cmd *cobra.Command, args []string) {
 
 		err := api.ListPackages(common.CurrentProject(), json, all)
@@ -22,12 +23,11 @@ var listCmd = &cobra.Command{
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
 		}
-
 	},
 }
 
 func init() {
 	listCmd.Flags().BoolVarP(&json, "json", "j", true, "print in json format")
-	listCmd.Flags().BoolVarP(&all, "all", "l", false, "print all imports")
+	listCmd.Flags().BoolVarP(&all, "all", "a", false, "print all imports")
 	rootCmd.AddCommand(listCmd)
 }
