@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -86,12 +87,17 @@ func ListPackages(project common.AppProject, format bool, all bool) error {
 		fmt.Println("Error in tidying up modules")
 		return err
 	}
+	contribs := make(map[string]util.Import)
+	importContribs, _ := util.GetImports(filepath.Join(project.Dir(), fileFlogoJson))
 
-	var contribs util.Imports
-	contribs, _ = util.GetImports(filepath.Join(project.Dir(), fileFlogoJson))
+	for _, contrib := range importContribs {
+		contribs[contrib.ModulePath()] = contrib
+	}
 
-	if !all {
-		contribs, _ = util.GetImportsFromJSON(filepath.Join(project.Dir(), fileFlogoJson))
+	refContribs, _ := util.GetImportsFromJSON(filepath.Join(project.Dir(), fileFlogoJson))
+
+	for _, contrib := range refContribs {
+		contribs[contrib.ModulePath()] = contrib
 	}
 
 	var result []interface{}
@@ -105,15 +111,21 @@ func ListPackages(project common.AppProject, format bool, all bool) error {
 		if err != nil {
 			return err
 		}
-
-		desc, err := util.GetContribDescriptor(path)
+		var desc *util.FlogoContribDescriptor
+		if path != "" {
+			desc, err = util.GetContribDescriptor(path)
+			if err != nil {
+				return err
+			}
+		} else {
+			fmt.Println("Unable to find path for", contrib)
+			return errors.New("Invalid Ref")
+		}
 
 		if Verbose() {
 			fmt.Println("Path of contrib descriptor", desc)
 		}
-		if err != nil {
-			return err
-		}
+
 		if desc == nil {
 			continue
 		}
