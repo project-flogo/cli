@@ -247,11 +247,6 @@ func GetImportsFromJSON(path string) (Imports, error) {
 		return nil, err
 	}
 
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Unable to find %v", path)
-		return nil, err
-	}
-
 	err = json.Unmarshal(bytes, appConfig)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to marshal ")
