@@ -291,11 +291,12 @@ func getRefsFromConfig(appConfig *AppConfig) []string {
 	extractDependencies(appConfig.Resources)
 	extractDependencies(appConfig.Actions)
 	var result []string
-	for key, _ := range refsInJSON {
+	for key := range refsInJSON {
 		result = append(result, key)
 	}
 	return result
 }
+
 func extractDependencies(resource interface{}) {
 
 	switch resource.(type) {
