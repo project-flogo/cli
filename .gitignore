@@ -23,9 +23,10 @@
 .idea/
 
 # cli binary
-flogo
+./flogo
 
 go.sum
 
 go.mod.build
 
+cmd/flogo/currentversion.go
