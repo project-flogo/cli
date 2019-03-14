@@ -323,7 +323,7 @@ func extractDependencies(resource interface{}) []string {
 			refs = append(refs, extractDependencies(resource.([]interface{})[i])...)
 		}
 	default:
-		return append(refs, "")
+		refs = append(refs, "")
 	}
 	return refs
 }
