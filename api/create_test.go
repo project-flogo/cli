@@ -171,6 +171,7 @@ func TestCmdCreate_masterCore(t *testing.T) {
 	defer testEnv.cleanup()
 
 	t.Logf("Current dir '%s'", testEnv.currentDir)
+	os.Chdir(testEnv.currentDir)
 
 	_, err = CreateProject(testEnv.currentDir, "myApp", "", "master")
 	assert.Equal(t, nil, err)
@@ -190,6 +191,8 @@ func TestCmdCreate_versionCore(t *testing.T) {
 	defer testEnv.cleanup()
 
 	t.Logf("Current dir '%s'", testEnv.currentDir)
+	os.Chdir(testEnv.currentDir)
+
 	_, err = CreateProject(testEnv.currentDir, "myApp", "", "v0.9.0-alpha.4")
 	assert.Equal(t, nil, err)
 
