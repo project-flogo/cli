@@ -12,7 +12,6 @@ import (
 )
 
 var exists = struct{}{}
-var refsInJSON map[string]interface{}
 
 // ParseAppDescriptor parse the application descriptor
 func ParseAppDescriptor(appJson string) (*FlogoAppDescriptor, error) {
@@ -43,13 +42,6 @@ type FlogoTriggerConfig struct {
 	Id   string `json:"id"`
 	Ref  string `json:"ref"`
 	Type string `json:"type"`
-}
-
-type AppConfig struct {
-	Imports   []string      `json:"imports,omitempty"`
-	Triggers  []interface{} `json:"triggers"`
-	Resources []interface{} `json:"resources,omitempty"`
-	Actions   []interface{} `json:"actions,omitempty"`
 }
 
 // FlogoAppDescriptor is the descriptor for a Flogo application
