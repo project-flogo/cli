@@ -272,6 +272,7 @@ func GetImportsFromJSON(path string) (Imports, error) {
 				appConfig.Imports = append(appConfig.Imports[:index], appConfig.Imports[index+1:]...)
 			}
 		}
+		//
 		if !found {
 			flogoImport, err := ParseImport(key)
 			if err != nil {
