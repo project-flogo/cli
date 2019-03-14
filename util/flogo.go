@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	fpath "path"
 	"path/filepath"
 	"strings"
 )
@@ -227,96 +226,4 @@ func ParseImportPath(path string) (string, string) {
 
 	}
 	return path, ""
-}
-
-func GetImportsFromJSON(path string) (Imports, error) {
-
-	appConfig := &AppConfig{}
-	//fmt.Println("Path is", path)
-	descriptorJson, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-
-	bytes, err := ioutil.ReadAll(descriptorJson)
-	if err != nil {
-		return nil, err
-	}
-
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Unable to find %v", path)
-		return nil, err
-	}
-
-	err = json.Unmarshal(bytes, appConfig)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Unable to marshal ")
-		return nil, err
-	}
-
-	refs := getRefsFromConfig(appConfig)
-	var result Imports
-
-	for _, key := range refs {
-		found := false
-
-		for index, contrib := range appConfig.Imports {
-			flogoImport, err := ParseImport(contrib)
-			if err != nil {
-				return nil, err
-			}
-			if fpath.Base(contrib) == key || flogoImport.Alias() == key {
-				found = true
-
-				result = append(result, flogoImport)
-				//delete the found contrib. Reduces the number of iteration.
-				appConfig.Imports = append(appConfig.Imports[:index], appConfig.Imports[index+1:]...)
-			}
-		}
-		if !found {
-			flogoImport, err := ParseImport(key)
-			if err != nil {
-				return nil, err
-			}
-			result = append(result, flogoImport)
-		}
-
-	}
-	return result, nil
-}
-
-func getRefsFromConfig(appConfig *AppConfig) []string {
-	refsInJSON = make(map[string]interface{})
-
-	extractDependencies(appConfig.Triggers)
-	extractDependencies(appConfig.Resources)
-	extractDependencies(appConfig.Actions)
-	var result []string
-	for key, _ := range refsInJSON {
-		result = append(result, key)
-	}
-	return result
-}
-func extractDependencies(resource interface{}) {
-
-	switch resource.(type) {
-	case map[string]interface{}:
-
-		for key, val := range resource.(map[string]interface{}) {
-			//Type is deprecated use ref instead.
-			if key == "ref" {
-				val = strings.Trim(val.(string), "#")
-				refsInJSON[val.(string)] = true
-			}
-			extractDependencies(resource.(map[string]interface{})[key])
-		}
-	case []interface{}:
-
-		for i := 0; i < len(resource.([]interface{})); i++ {
-			extractDependencies(resource.([]interface{})[i])
-		}
-	default:
-
-	}
-
 }

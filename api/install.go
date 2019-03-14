@@ -90,10 +90,6 @@ func ListPackages(project common.AppProject, format bool, all bool) error {
 	var contribs util.Imports
 	contribs, _ = util.GetImports(filepath.Join(project.Dir(), fileFlogoJson))
 
-	if !all {
-		contribs, _ = util.GetImportsFromJSON(filepath.Join(project.Dir(), fileFlogoJson))
-	}
-
 	var result []interface{}
 
 	for _, contrib := range contribs {

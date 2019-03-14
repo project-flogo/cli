@@ -158,17 +158,30 @@ func (p *appProjectImpl) addImportsInJson(ignoreError bool, imports ...util.Impo
 	json.Unmarshal([]byte(appDescriptorData), &appDescriptor)
 
 	// list existing imports in JSON to avoid duplicates
-	existingImports := make(map[string]bool)
+	existingImports := make(map[string]string)
 	jsonImports, _ := util.ParseImports(appDescriptor.Imports)
 	for _, e := range jsonImports {
-		existingImports[e.CanonicalImport()] = true
+		existingImports[e.ModulePath()] = e.CanonicalImport()
 	}
 
 	for _, i := range imports {
-		if _, ok := existingImports[i.CanonicalImport()]; !ok {
-			appDescriptor.Imports = append(appDescriptor.Imports, i.CanonicalImport())
+		val, ok := existingImports[i.ModulePath()]
+		if !ok {
+			//appDescriptor.Imports = append(appDescriptor.Imports, i.CanonicalImport())
+			existingImports[i.ModulePath()] = i.CanonicalImport()
+		} else {
+			if i.CanonicalImport() != val {
+				delete(existingImports, val)
+				existingImports[i.ModulePath()] = i.CanonicalImport()
+			}
 		}
+
 	}
+	var newImport []string
+	for _, val := range existingImports {
+		newImport = append(newImport, val)
+	}
+	appDescriptor.Imports = newImport
 
 	appDescriptorUpdated, err := json.MarshalIndent(appDescriptor, "", "  ")
 	if err != nil {
