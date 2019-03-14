@@ -13,7 +13,6 @@ import (
 )
 
 var exists = struct{}{}
-var refsInJSON map[string]interface{}
 
 // ParseAppDescriptor parse the application descriptor
 func ParseAppDescriptor(appJson string) (*FlogoAppDescriptor, error) {
@@ -286,20 +285,30 @@ func GetImportsFromJSON(path string) (Imports, error) {
 }
 
 func getRefsFromConfig(appConfig *AppConfig) []string {
-	refsInJSON = make(map[string]interface{})
-
-	extractDependencies(appConfig.Triggers)
-	extractDependencies(appConfig.Resources)
-	extractDependencies(appConfig.Actions)
-	var result []string
-	for key := range refsInJSON {
-		result = append(result, key)
+	var results []string
+	triggers := extractDependencies(appConfig.Triggers)
+	for _, val := range triggers {
+		if val != "" {
+			results = append(results, val)
+		}
 	}
-	return result
+	resources := extractDependencies(appConfig.Resources)
+	for _, val := range resources {
+		if val != "" {
+			results = append(results, val)
+		}
+	}
+	actions := extractDependencies(appConfig.Actions)
+	for _, val := range actions {
+		if val != "" {
+			results = append(results, val)
+		}
+	}
+
 }
 
-func extractDependencies(resource interface{}) {
-
+func extractDependencies(resource interface{}) []string {
+	var refs []string
 	switch resource.(type) {
 	case map[string]interface{}:
 
@@ -307,17 +316,18 @@ func extractDependencies(resource interface{}) {
 			//Type is deprecated use ref instead.
 			if key == "ref" {
 				val = strings.Trim(val.(string), "#")
-				refsInJSON[val.(string)] = true
+				refs = append(refs, val.(string))
+				return refs
 			}
-			extractDependencies(resource.(map[string]interface{})[key])
+			refs = append(refs, extractDependencies(resource.(map[string]interface{})[key])...)
 		}
 	case []interface{}:
 
 		for i := 0; i < len(resource.([]interface{})); i++ {
-			extractDependencies(resource.([]interface{})[i])
+			refs = append(refs, extractDependencies(resource.([]interface{})[i])...)
 		}
 	default:
-
+		return append(refs, "")
 	}
-
+	return refs
 }
