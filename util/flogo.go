@@ -258,7 +258,7 @@ func GetImportsFromJSON(path string) (Imports, error) {
 	for _, key := range refs {
 		found := false
 
-		for index, contrib := range appConfig.Imports {
+		for _, contrib := range appConfig.Imports {
 			flogoImport, err := ParseImport(contrib)
 			if err != nil {
 				return nil, err
@@ -267,8 +267,6 @@ func GetImportsFromJSON(path string) (Imports, error) {
 				found = true
 
 				result = append(result, flogoImport)
-				//delete the found contrib. Reduces the number of iteration.
-				appConfig.Imports = append(appConfig.Imports[:index], appConfig.Imports[index+1:]...)
 			}
 		}
 		//
@@ -305,6 +303,7 @@ func getRefsFromConfig(appConfig *AppConfig) []string {
 		}
 	}
 
+	return results
 }
 
 func extractDependencies(resource interface{}) []string {
@@ -327,7 +326,7 @@ func extractDependencies(resource interface{}) []string {
 			refs = append(refs, extractDependencies(resource.([]interface{})[i])...)
 		}
 	default:
-		refs = append(refs, "")
+		return append(refs, "")
 	}
 	return refs
 }
