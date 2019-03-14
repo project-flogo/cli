@@ -284,24 +284,12 @@ func GetImportsFromJSON(path string) (Imports, error) {
 
 func getRefsFromConfig(appConfig *AppConfig) []string {
 	var results []string
-	triggers := extractDependencies(appConfig.Triggers)
-	for _, val := range triggers {
-		if val != "" {
-			results = append(results, val)
-		}
-	}
-	resources := extractDependencies(appConfig.Resources)
-	for _, val := range resources {
-		if val != "" {
-			results = append(results, val)
-		}
-	}
-	actions := extractDependencies(appConfig.Actions)
-	for _, val := range actions {
-		if val != "" {
-			results = append(results, val)
-		}
-	}
+
+	results = append(results, extractDependencies(appConfig.Triggers)...)
+
+	results = append(results, extractDependencies(appConfig.Resources)...)
+
+	results = append(results, extractDependencies(appConfig.Actions)...)
 
 	return results
 }
@@ -326,7 +314,7 @@ func extractDependencies(resource interface{}) []string {
 			refs = append(refs, extractDependencies(resource.([]interface{})[i])...)
 		}
 	default:
-		return append(refs, "")
+		return append(refs)
 	}
 	return refs
 }
