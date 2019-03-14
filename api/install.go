@@ -88,7 +88,16 @@ func ListPackages(project common.AppProject, format bool, all bool) error {
 	}
 
 	var contribs util.Imports
-	contribs, _ = util.GetImports(filepath.Join(project.Dir(), fileFlogoJson))
+
+	if all {
+		imports, _ := util.GetAllImports(filepath.Join(project.SrcDir(), fileImportsGo)) // Get Imports from imports.go
+		for _, i := range imports {
+			flogoImport, _ := util.ParseImport(i)
+			contribs = append(contribs, flogoImport)
+		}
+	} else {
+		contribs, _ = util.GetImports(filepath.Join(project.Dir(), fileFlogoJson)) // Get Imports from flogo.json
+	}
 
 	var result []interface{}
 
