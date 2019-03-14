@@ -9,18 +9,13 @@ import (
 	"strings"
 )
 
-func GetVersion() string {
-	cmd := exec.Command("git", "remote", "get-url", "origin")
-	cmd.Env = append(os.Environ())
-
+func GetVersion(fromGoPathSources bool) string {
 	re := regexp.MustCompile("\\n")
 
-	currentRemoteURLOutput, err := cmd.Output() // determine whether we're building from source
-	currentRemoteURL := re.ReplaceAllString(string(currentRemoteURLOutput), "")
+	cmd := exec.Command("git", "describe", "--tags", "--dirty", "--always")
+	cmd.Env = append(os.Environ())
 
-	cmd = exec.Command("git", "describe", "--tags", "--dirty", "--always")
-
-	if !strings.HasSuffix(currentRemoteURL, "cli.git") { // we're not building from source but we are "go getting"
+	if fromGoPathSources {
 		gopath, set := os.LookupEnv("GOPATH")
 		if !set {
 			out, err := exec.Command("go", "env", "GOPATH").Output()

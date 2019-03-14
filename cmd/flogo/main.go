@@ -6,8 +6,9 @@ import (
 	"github.com/project-flogo/cli/commands"
 )
 
-var Version string = "" // Not set by default, will be filled by init() function in "./currentversion.go" file, if it
-// exists. This latter file is generated with a "go generate" command.
+// Not set by default, will be filled by init() function in "./currentversion.go" file, if it exists.
+// This latter file is generated with a "go generate" command.
+var Version string = ""
 
 //go:generate go run gen/version.go
 func main() {
