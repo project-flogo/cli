@@ -31,9 +31,9 @@ func Initialize(version string) {
 	rootCmd.PersistentFlags().BoolVar(&verbose, "verbose", false, "verbose output")
 
 	if len(version) > 0 {
-		rootCmd.Version = version
+		rootCmd.Version = version // use version hardcoded by a "go generate" command
 	} else {
-		rootCmd.Version = util.GetVersion()
+		rootCmd.Version = util.GetVersion(true) // guess version from sources in $GOPATH/src
 	}
 
 	rootCmd.SetVersionTemplate(VersionTpl)
