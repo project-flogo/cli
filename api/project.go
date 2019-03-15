@@ -158,21 +158,25 @@ func (p *appProjectImpl) addImportsInJson(ignoreError bool, imports ...util.Impo
 	json.Unmarshal([]byte(appDescriptorData), &appDescriptor)
 
 	// list existing imports in JSON to avoid duplicates
-	existingImports := make(map[string]string)
+	existingImports := make(map[string]util.Import)
 	jsonImports, _ := util.ParseImports(appDescriptor.Imports)
 	for _, e := range jsonImports {
-		existingImports[e.ModulePath()] = e.CanonicalImport()
+		existingImports[e.GoImportPath()] = e
 	}
 
 	for _, i := range imports {
 		val, ok := existingImports[i.ModulePath()]
 		if !ok {
 			//appDescriptor.Imports = append(appDescriptor.Imports, i.CanonicalImport())
-			existingImports[i.ModulePath()] = i.CanonicalImport()
+			existingImports[i.GoImportPath()] = i
 		} else {
-			if i.CanonicalImport() != val {
-				delete(existingImports, val)
-				existingImports[i.ModulePath()] = i.CanonicalImport()
+			if i.CanonicalImport() != val.CanonicalImport() {
+				delete(existingImports, val.GoImportPath())
+				alias := i.Alias()
+				if val.Alias() != "" && i.Alias() == "" {
+					alias = val.Alias()
+				}
+				existingImports[i.GoImportPath()] = util.NewFlogoImport(i.ModulePath(), i.RelativeImportPath(), i.Version(), alias)
 			}
 		}
 
