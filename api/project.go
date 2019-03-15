@@ -165,7 +165,7 @@ func (p *appProjectImpl) addImportsInJson(ignoreError bool, imports ...util.Impo
 	}
 
 	for _, i := range imports {
-		val, ok := existingImports[i.ModulePath()]
+		val, ok := existingImports[i.GoImportPath()]
 		if !ok {
 			//appDescriptor.Imports = append(appDescriptor.Imports, i.CanonicalImport())
 			existingImports[i.GoImportPath()] = i
@@ -183,7 +183,7 @@ func (p *appProjectImpl) addImportsInJson(ignoreError bool, imports ...util.Impo
 	}
 	var newImport []string
 	for _, val := range existingImports {
-		newImport = append(newImport, val)
+		newImport = append(newImport, val.CanonicalImport())
 	}
 	appDescriptor.Imports = newImport
 
