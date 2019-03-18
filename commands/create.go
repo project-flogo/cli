@@ -41,7 +41,7 @@ var CreateCmd = &cobra.Command{
 }
 
 func init() {
-	CreateCmd.Flags().StringVarP(&flogoJsonPath, "file", "f", "", "specify flogo.json file")
-	CreateCmd.Flags().StringVarP(&coreVersion, "cv", "", "", "specify core library version")
+  CreateCmd.Flags().StringVarP(&flogoJsonPath, "file", "f", "", "specify flogo.json file")
+  CreateCmd.Flags().StringVarP(&coreVersion, "cv", "", "", "specify core library version")
 	rootCmd.AddCommand(CreateCmd)
 }
