@@ -263,7 +263,7 @@ func GetImportsFromJSON(path string) (Imports, error) {
 			if err != nil {
 				return nil, err
 			}
-			if fpath.Base(contrib) == key || flogoImport.Alias() == key {
+			if fpath.Base(flogoImport.GoImportPath()) == key || flogoImport.Alias() == key {
 				found = true
 
 				result = append(result, flogoImport)
