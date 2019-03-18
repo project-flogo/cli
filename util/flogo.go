@@ -62,7 +62,11 @@ type FlogoContribBundleDescriptor struct {
 }
 
 func (d *FlogoContribDescriptor) GetContribType() string {
-	return strings.Split(d.Type, ":")[1]
+	parts := strings.Split(d.Type, ":")
+	if len(parts) > 1 {
+		return parts[1]
+	}
+	return ""
 }
 
 func GetContribDescriptor(path string) (*FlogoContribDescriptor, error) {
