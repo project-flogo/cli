@@ -4,16 +4,13 @@ import (
 	"fmt"
 
 	"github.com/project-flogo/cli/common"
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
 func GetWalrus() {
 	//fmt.Println("Log Example")
 
-	log.WithFields(log.Fields{
-		"animal": "walrus",
-	}).Info("A walrus appears")
+	fmt.Println("Log A Walrus")
 }
 
 var helloCmd = &cobra.Command{

@@ -97,13 +97,20 @@ func ListPackages(project common.AppProject, format bool, all bool) error {
 	refContribs, _ := util.GetImportsFromJSON(filepath.Join(project.Dir(), fileFlogoJson))
 
 	for _, contrib := range refContribs {
+
 		contribs[contrib.ModulePath()] = contrib
+
+	}
+	if Verbose() {
+		fmt.Println("Contribs from json..", contribs)
 	}
 
 	var result []interface{}
 
 	for _, contrib := range contribs {
+
 		path, err := project.GetPath(contrib)
+
 		if Verbose() {
 			fmt.Println("Path of contrib", path, "for contrib", contrib)
 		}
