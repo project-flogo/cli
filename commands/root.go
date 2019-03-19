@@ -2,15 +2,14 @@ package commands
 
 import (
 	"fmt"
-	"os"
-
 	"github.com/project-flogo/cli/api"
 	"github.com/project-flogo/cli/common"
+	"github.com/project-flogo/cli/util"
 	"github.com/spf13/cobra"
+	"os"
 )
 
 const (
-	Version    = "0.0.1"
 	VersionTpl = `{{with .Name}}{{printf "%s " .}}{{end}}{{printf "cli version %s" .Version}}
 `
 )
@@ -19,18 +18,23 @@ var verbose bool
 
 //Root command
 var rootCmd = &cobra.Command{
-	Use:     "flogo [flags] [command]",
-	Short:   "flogo cli",
-	Long:    `flogo command line interface for flogo applications`,
-	Version: Version,
+	Use:   "flogo [flags] [command]",
+	Short: "flogo cli",
+	Long:  `flogo command line interface for flogo applications`,
 
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		preRun(cmd, args, verbose)
 	},
 }
 
-func Initialize() {
+func Initialize(version string) {
 	rootCmd.PersistentFlags().BoolVar(&verbose, "verbose", false, "verbose output")
+
+	if len(version) > 0 {
+		rootCmd.Version = version // use version hardcoded by a "go generate" command
+	} else {
+		rootCmd.Version = util.GetVersion(true) // guess version from sources in $GOPATH/src
+	}
 
 	rootCmd.SetVersionTemplate(VersionTpl)
 

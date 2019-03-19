@@ -1,0 +1,32 @@
+before:
+  hooks:
+  - go mod download
+  - go generate ./...
+builds:
+  - goos:
+      - darwin
+      - linux
+      - windows
+    goarch:
+      - amd64
+    env:
+      - CGO_ENABLED=0
+      - GO111MODULE=on
+    main: ./cmd/flogo/
+    binary: flogo
+
+archive:
+  format: binary
+  replacements:
+    darwin: osx
+    linux: linux
+    windows: win
+    amd64: x86_64
+checksum:
+  name_template: 'checksums.txt'
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'

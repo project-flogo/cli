@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -35,7 +36,11 @@ func InstallPackage(project common.AppProject, pkg string) error {
 
 	desc, err := util.GetContribDescriptor(path)
 	if desc != nil {
-		fmt.Printf("Installed %s: %s\n", desc.GetContribType(), pkg)
+		cType := desc.GetContribType()
+		if desc.IsLegacy {
+			cType = "legacy " + desc.GetContribType()
+		}
+		fmt.Printf("Installed %s: %s\n", cType, pkg)
 	}
 
 	legacySupportRequired, err := IsLegacySupportRequired(desc, path, pkg, true)
@@ -86,18 +91,30 @@ func ListPackages(project common.AppProject, format bool, all bool) error {
 		fmt.Println("Error in tidying up modules")
 		return err
 	}
+	contribs := make(map[string]util.Import)
+	importContribs, _ := util.GetImports(filepath.Join(project.Dir(), fileFlogoJson))
 
-	var contribs util.Imports
-	contribs, _ = util.GetImports(filepath.Join(project.Dir(), fileFlogoJson))
+	for _, contrib := range importContribs {
+		contribs[contrib.ModulePath()] = contrib
+	}
 
-	if !all {
-		contribs, _ = util.GetImportsFromJSON(filepath.Join(project.Dir(), fileFlogoJson))
+	refContribs, _ := util.GetImportsFromJSON(filepath.Join(project.Dir(), fileFlogoJson))
+
+	for _, contrib := range refContribs {
+
+		contribs[contrib.ModulePath()] = contrib
+
+	}
+	if Verbose() {
+		fmt.Println("Contribs from json..", contribs)
 	}
 
 	var result []interface{}
 
 	for _, contrib := range contribs {
+
 		path, err := project.GetPath(contrib)
+
 		if Verbose() {
 			fmt.Println("Path of contrib", path, "for contrib", contrib)
 		}
@@ -105,15 +122,21 @@ func ListPackages(project common.AppProject, format bool, all bool) error {
 		if err != nil {
 			return err
 		}
-
-		desc, err := util.GetContribDescriptor(path)
+		var desc *util.FlogoContribDescriptor
+		if path != "" {
+			desc, err = util.GetContribDescriptor(path)
+			if err != nil {
+				return err
+			}
+		} else {
+			fmt.Println("Unable to find path for", contrib)
+			return errors.New("Invalid Ref")
+		}
 
 		if Verbose() {
 			fmt.Println("Path of contrib descriptor", desc)
 		}
-		if err != nil {
-			return err
-		}
+
 		if desc == nil {
 			continue
 		}

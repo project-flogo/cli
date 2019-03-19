@@ -106,6 +106,7 @@ func TestInstallLegacyPkg(t *testing.T) {
 	defer testEnv.cleanup()
 
 	t.Logf("Current dir '%s'", testEnv.currentDir)
+	os.Chdir(testEnv.currentDir)
 
 	_, err := CreateProject(testEnv.currentDir, "myApp", "", "")
 
@@ -136,6 +137,7 @@ func TestInstallPkg(t *testing.T) {
 	defer testEnv.cleanup()
 
 	t.Logf("Current dir '%s'", testEnv.currentDir)
+	os.Chdir(testEnv.currentDir)
 
 	_, err := CreateProject(testEnv.currentDir, "myApp", "", "")
 
@@ -165,6 +167,7 @@ func TestInstallPkgWithVersion(t *testing.T) {
 	defer testEnv.cleanup()
 
 	t.Logf("Current dir '%s'", testEnv.currentDir)
+	os.Chdir(testEnv.currentDir)
 
 	_, err := CreateProject(testEnv.currentDir, "myApp", "", "")
 
@@ -194,6 +197,7 @@ func TestListPkg(t *testing.T) {
 	defer testEnv.cleanup()
 
 	t.Logf("Current dir '%s'", testEnv.currentDir)
+	os.Chdir(testEnv.currentDir)
 
 	_, err := CreateProject(testEnv.currentDir, "myApp", "", "")
 
@@ -214,6 +218,7 @@ func TestListAllPkg(t *testing.T) {
 	defer testEnv.cleanup()
 
 	t.Logf("Current dir '%s'", testEnv.currentDir)
+	os.Chdir(testEnv.currentDir)
 
 	_, err := CreateProject(testEnv.currentDir, "myApp", "", "")
 

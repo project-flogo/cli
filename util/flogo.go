@@ -7,13 +7,12 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	fpath "path"
+	"path"
 	"path/filepath"
 	"strings"
 )
 
 var exists = struct{}{}
-var refsInJSON map[string]interface{}
 
 // ParseAppDescriptor parse the application descriptor
 func ParseAppDescriptor(appJson string) (*FlogoAppDescriptor, error) {
@@ -60,8 +59,10 @@ type FlogoContribDescriptor struct {
 	Version     string `json:"version"`
 	Description string `json:"description"`
 	Homepage    string `json:"homepage"`
-	Ref         string `json:"ref"`
 	Shim        string `json:"shim"`
+	Ref         string `json:"ref"` //legacy
+
+	IsLegacy bool `json:"-"`
 }
 
 type FlogoContribBundleDescriptor struct {
@@ -71,7 +72,11 @@ type FlogoContribBundleDescriptor struct {
 }
 
 func (d *FlogoContribDescriptor) GetContribType() string {
-	return strings.Split(d.Type, ":")[1]
+	parts := strings.Split(d.Type, ":")
+	if len(parts) > 1 {
+		return parts[1]
+	}
+	return ""
 }
 
 func GetContribDescriptor(path string) (*FlogoContribDescriptor, error) {
@@ -84,15 +89,37 @@ func GetContribDescriptor(path string) (*FlogoContribDescriptor, error) {
 	}
 
 	for _, f := range files {
-		if strings.HasSuffix(f.Name(), ".json") {
+
+		isDescFile, isLegacyFile := isDescriptorFileName(f.Name())
+
+		if isDescFile {
 
 			desc, err := ReadContribDescriptor(filepath.Join(path, f.Name()))
 			if err == nil {
-				return desc, nil
+				if desc.Type != "" {
+					// has a type so should be a descriptor file
+					if isLegacyFile && desc.Ref == "" {
+						return nil, fmt.Errorf("invalid legacy contribution descriptor: %s", f.Name())
+					}
+					desc.IsLegacy = isLegacyFile
+					return desc, nil
+				}
 			}
 		}
 	}
+
 	return nil, nil
+}
+
+func isDescriptorFileName(fileName string) (bool, bool) {
+	fileNameLC := strings.ToLower(fileName)
+	switch fileNameLC {
+	case "descriptor.json":
+		return true, false
+	case "action.json", "trigger.json", "activity.json":
+		return true, true
+	}
+	return false, false
 }
 
 // ParseAppDescriptor parse the application descriptor
@@ -216,6 +243,30 @@ func ReadContribDescriptor(descriptorFile string) (*FlogoContribDescriptor, erro
 	return descriptor, nil
 }
 
+func GetAllImports(path string) ([]string, error) {
+
+	var results []string
+	bytes, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	data := string(bytes)
+
+	pkgs := strings.Split(data[strings.Index(data, "(")+1:], "\n") //Get individual rows containing pkgs.
+
+	for _, pkg := range pkgs {
+
+		// Remove last line containing ")" and any empty rows
+		if !strings.Contains(pkg, ")") && len(pkg) != 0 {
+			result := strings.Replace(strings.TrimSpace(pkg), "\"", "", -1)
+			results = append(results, strings.TrimSpace(strings.Replace(result, "_", "", -1)))
+
+		}
+	}
+
+	return results, nil
+}
+
 func ParseImportPath(path string) (string, string) {
 
 	// If @ is specified split
@@ -229,28 +280,22 @@ func ParseImportPath(path string) (string, string) {
 	return path, ""
 }
 
-func GetImportsFromJSON(path string) (Imports, error) {
+func GetImportsFromJSON(appJsonFile string) (Imports, error) {
+
+	appJson, err := os.Open(appJsonFile)
+	if err != nil {
+		return nil, err
+	}
+
+	bytes, err := ioutil.ReadAll(appJson)
+	if err != nil {
+		return nil, err
+	}
 
 	appConfig := &AppConfig{}
-	//fmt.Println("Path is", path)
-	descriptorJson, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-
-	bytes, err := ioutil.ReadAll(descriptorJson)
-	if err != nil {
-		return nil, err
-	}
-
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Unable to find %v", path)
-		return nil, err
-	}
-
 	err = json.Unmarshal(bytes, appConfig)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Unable to marshal ")
+		fmt.Fprintf(os.Stderr, "Unable to unmarshal flogo app json: %s", appJsonFile)
 		return nil, err
 	}
 
@@ -260,19 +305,18 @@ func GetImportsFromJSON(path string) (Imports, error) {
 	for _, key := range refs {
 		found := false
 
-		for index, contrib := range appConfig.Imports {
+		for _, contrib := range appConfig.Imports {
 			flogoImport, err := ParseImport(contrib)
 			if err != nil {
 				return nil, err
 			}
-			if fpath.Base(contrib) == key || flogoImport.Alias() == key {
+			if path.Base(flogoImport.GoImportPath()) == key || flogoImport.Alias() == key {
 				found = true
 
 				result = append(result, flogoImport)
-				//delete the found contrib. Reduces the number of iteration.
-				appConfig.Imports = append(appConfig.Imports[:index], appConfig.Imports[index+1:]...)
 			}
 		}
+
 		if !found {
 			flogoImport, err := ParseImport(key)
 			if err != nil {
@@ -286,19 +330,19 @@ func GetImportsFromJSON(path string) (Imports, error) {
 }
 
 func getRefsFromConfig(appConfig *AppConfig) []string {
-	refsInJSON = make(map[string]interface{})
+	var results []string
 
-	extractDependencies(appConfig.Triggers)
-	extractDependencies(appConfig.Resources)
-	extractDependencies(appConfig.Actions)
-	var result []string
-	for key, _ := range refsInJSON {
-		result = append(result, key)
-	}
-	return result
+	results = append(results, extractDependencies(appConfig.Triggers)...)
+
+	results = append(results, extractDependencies(appConfig.Resources)...)
+
+	results = append(results, extractDependencies(appConfig.Actions)...)
+
+	return results
 }
-func extractDependencies(resource interface{}) {
 
+func extractDependencies(resource interface{}) []string {
+	var refs []string
 	switch resource.(type) {
 	case map[string]interface{}:
 
@@ -306,17 +350,18 @@ func extractDependencies(resource interface{}) {
 			//Type is deprecated use ref instead.
 			if key == "ref" {
 				val = strings.Trim(val.(string), "#")
-				refsInJSON[val.(string)] = true
+				refs = append(refs, val.(string))
+				return refs
 			}
-			extractDependencies(resource.(map[string]interface{})[key])
+			refs = append(refs, extractDependencies(resource.(map[string]interface{})[key])...)
 		}
 	case []interface{}:
 
 		for i := 0; i < len(resource.([]interface{})); i++ {
-			extractDependencies(resource.([]interface{})[i])
+			refs = append(refs, extractDependencies(resource.([]interface{})[i])...)
 		}
 	default:
-
+		return append(refs)
 	}
-
+	return refs
 }
