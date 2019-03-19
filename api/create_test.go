@@ -171,6 +171,7 @@ func TestCmdCreate_masterCore(t *testing.T) {
 	defer testEnv.cleanup()
 
 	t.Logf("Current dir '%s'", testEnv.currentDir)
+	os.Chdir(testEnv.currentDir)
 
 	_, err = CreateProject(testEnv.currentDir, "myApp", "", "master")
 	assert.Equal(t, nil, err)
@@ -190,7 +191,9 @@ func TestCmdCreate_versionCore(t *testing.T) {
 	defer testEnv.cleanup()
 
 	t.Logf("Current dir '%s'", testEnv.currentDir)
-	_, err = CreateProject(testEnv.currentDir, "myApp", "", "v0.9.0-alpha.3")
+	os.Chdir(testEnv.currentDir)
+
+	_, err = CreateProject(testEnv.currentDir, "myApp", "", "v0.9.0-alpha.4")
 	assert.Equal(t, nil, err)
 
 	_, err = os.Stat(filepath.Join(tempDir, "myApp", "src", "go.mod"))
@@ -206,7 +209,7 @@ func TestCmdCreate_versionCore(t *testing.T) {
 	data, err1 := ioutil.ReadFile(filepath.Join(tempDir, "myApp", "src", "go.mod"))
 	assert.Equal(t, nil, err1)
 
-	assert.Equal(t, true, strings.Contains(string(data), "v0.9.0-alpha.3"))
+	assert.Equal(t, true, strings.Contains(string(data), "v0.9.0-alpha.4"))
 
 	appProject := NewAppProject(filepath.Join(testEnv.currentDir, "myApp"))
 
