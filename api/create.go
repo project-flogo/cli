@@ -192,8 +192,15 @@ func importDependencies(project common.AppProject) error {
 		desc, err := util.GetContribDescriptor(path)
 
 		if desc != nil {
-			instStr := fmt.Sprintf("Installed %s:", desc.GetContribType())
-			fmt.Printf("%-20s %s\n", instStr, imp)
+
+			cType := desc.GetContribType()
+			if desc.IsLegacy {
+				cType = "legacy " + desc.GetContribType()
+			}
+
+			fmt.Printf("Installed %s: %s\n", cType, imp)
+			//instStr := fmt.Sprintf("Installed %s:", cType)
+			//fmt.Printf("%-20s %s\n", instStr, imp)
 		}
 
 		legacy, err := IsLegacySupportRequired(desc, path, imp.GoImportPath(), true)

@@ -13,9 +13,9 @@ var localContrib string
 var contribBundle string
 
 var installCmd = &cobra.Command{
-	Use:   "install [flags] <contribution>",
-	Short: "install a flogo contribution",
-	Long:  "Installs a flogo contribution",
+	Use:   "install [flags] <contribution|dependency>",
+	Short: "install a flogo contribution/dependency",
+	Long:  "Installs a flogo contribution or dependency",
 	Run: func(cmd *cobra.Command, args []string) {
 
 		if contribBundle != "" {

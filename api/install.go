@@ -35,7 +35,11 @@ func InstallPackage(project common.AppProject, pkg string) error {
 
 	desc, err := util.GetContribDescriptor(path)
 	if desc != nil {
-		fmt.Printf("Installed %s: %s\n", desc.GetContribType(), pkg)
+		cType := desc.GetContribType()
+		if desc.IsLegacy {
+			cType = "legacy " + desc.GetContribType()
+		}
+		fmt.Printf("Installed %s: %s\n", cType, pkg)
 	}
 
 	legacySupportRequired, err := IsLegacySupportRequired(desc, path, pkg, true)

@@ -51,8 +51,10 @@ type FlogoContribDescriptor struct {
 	Version     string `json:"version"`
 	Description string `json:"description"`
 	Homepage    string `json:"homepage"`
-	Ref         string `json:"ref"`
 	Shim        string `json:"shim"`
+	Ref         string `json:"ref"` //legacy
+
+	IsLegacy bool `json:"-"`
 }
 
 type FlogoContribBundleDescriptor struct {
@@ -79,15 +81,37 @@ func GetContribDescriptor(path string) (*FlogoContribDescriptor, error) {
 	}
 
 	for _, f := range files {
-		if strings.HasSuffix(f.Name(), ".json") {
+
+		isDescFile, isLegacyFile := isDescriptorFileName(f.Name())
+
+		if isDescFile {
 
 			desc, err := ReadContribDescriptor(filepath.Join(path, f.Name()))
 			if err == nil {
-				return desc, nil
+				if desc.Type != "" {
+					// has a type so should be a descriptor file
+					if isLegacyFile && desc.Ref == "" {
+						return nil, fmt.Errorf("invalid legacy contribution descriptor: %s", f.Name())
+					}
+					desc.IsLegacy = isLegacyFile
+					return desc, nil
+				}
 			}
 		}
 	}
+
 	return nil, nil
+}
+
+func isDescriptorFileName(fileName string) (bool, bool) {
+	fileNameLC := strings.ToLower(fileName)
+	switch fileNameLC {
+	case "descriptor.json":
+		return true, false
+	case "action.json", "trigger.json", "activity.json":
+		return true, true
+	}
+	return false, false
 }
 
 // ParseAppDescriptor parse the application descriptor
