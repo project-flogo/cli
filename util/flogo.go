@@ -7,7 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	fpath "path"
+	"path"
 	"path/filepath"
 	"strings"
 )
@@ -280,23 +280,22 @@ func ParseImportPath(path string) (string, string) {
 	return path, ""
 }
 
-func GetImportsFromJSON(path string) (Imports, error) {
+func GetImportsFromJSON(appJsonFile string) (Imports, error) {
+
+	appJson, err := os.Open(appJsonFile)
+	if err != nil {
+		return nil, err
+	}
+
+	bytes, err := ioutil.ReadAll(appJson)
+	if err != nil {
+		return nil, err
+	}
 
 	appConfig := &AppConfig{}
-	//fmt.Println("Path is", path)
-	descriptorJson, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-
-	bytes, err := ioutil.ReadAll(descriptorJson)
-	if err != nil {
-		return nil, err
-	}
-
 	err = json.Unmarshal(bytes, appConfig)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Unable to marshal ")
+		fmt.Fprintf(os.Stderr, "Unable to unmarshal flogo app json: %s", appJsonFile)
 		return nil, err
 	}
 
@@ -311,13 +310,13 @@ func GetImportsFromJSON(path string) (Imports, error) {
 			if err != nil {
 				return nil, err
 			}
-			if fpath.Base(flogoImport.GoImportPath()) == key || flogoImport.Alias() == key {
+			if path.Base(flogoImport.GoImportPath()) == key || flogoImport.Alias() == key {
 				found = true
 
 				result = append(result, flogoImport)
 			}
 		}
-		//
+
 		if !found {
 			flogoImport, err := ParseImport(key)
 			if err != nil {
