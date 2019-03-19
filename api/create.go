@@ -146,7 +146,7 @@ func setupAppDirectory(dm util.DepManager, appPath, coreVersion string) error {
 		return err
 	}
 
-	fmt.Println("installing core")
+	fmt.Println("installing core version ", coreVersion)
 
 	flogoCoreImport := util.NewFlogoImport(flogoCoreRepo, "", coreVersion, "")
 
