@@ -2,16 +2,11 @@ package api
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
-	"io/ioutil"
-	"os"
-	"os/exec"
-	"path/filepath"
-	"strings"
-
 	"github.com/project-flogo/cli/common"
 	"github.com/project-flogo/cli/util"
+	"io/ioutil"
+	"os"
 )
 
 func InstallPackage(project common.AppProject, pkg string) error {
@@ -34,22 +29,29 @@ func InstallPackage(project common.AppProject, pkg string) error {
 		return err
 	}
 
+	legacySupportRequired := false
 	desc, err := util.GetContribDescriptor(path)
 	if desc != nil {
 		cType := desc.GetContribType()
 		if desc.IsLegacy {
+			legacySupportRequired = true
 			cType = "legacy " + desc.GetContribType()
+			err := CreateLegacyMetadata(path, desc.GetContribType(), pkg)
+			if err != nil {
+				return err
+			}
 		}
-		fmt.Printf("Installed %s: %s\n", cType, pkg)
-	}
 
-	legacySupportRequired, err := IsLegacySupportRequired(desc, path, pkg, true)
-	if err != nil {
-		return err
+		fmt.Printf("Installed %s: %s\n", cType, flogoImport)
+		//instStr := fmt.Sprintf("Installed %s:", cType)
+		//fmt.Printf("%-20s %s\n", instStr, imp)
 	}
 
 	if legacySupportRequired {
-		InstallLegacySupport(project)
+		err := InstallLegacySupport(project)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -78,108 +80,11 @@ func InstallContribBundle(project common.AppProject, path string) error {
 	}
 
 	for _, contrib := range contribBundleDescriptor.Contribs {
-		InstallPackage(project, contrib)
+		err := InstallPackage(project, contrib)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error installing contrib '%s': %s", contrib, err.Error())
+		}
 	}
 
 	return nil
-}
-
-func ListPackages(project common.AppProject, format bool, all bool) error {
-
-	err := util.ExecCmd(exec.Command("go", "mod", "tidy"), project.SrcDir())
-	if err != nil {
-		fmt.Println("Error in tidying up modules")
-		return err
-	}
-	contribs := make(map[string]util.Import)
-	importContribs, _ := util.GetImports(filepath.Join(project.Dir(), fileFlogoJson))
-
-	for _, contrib := range importContribs {
-		contribs[contrib.ModulePath()] = contrib
-	}
-
-	refContribs, _ := util.GetImportsFromJSON(filepath.Join(project.Dir(), fileFlogoJson))
-
-	for _, contrib := range refContribs {
-
-		contribs[contrib.ModulePath()] = contrib
-
-	}
-	if Verbose() {
-		fmt.Println("Contribs from json..", contribs)
-	}
-
-	var result []interface{}
-
-	for _, contrib := range contribs {
-
-		path, err := project.GetPath(contrib)
-
-		if Verbose() {
-			fmt.Println("Path of contrib", path, "for contrib", contrib)
-		}
-
-		if err != nil {
-			return err
-		}
-		var desc *util.FlogoContribDescriptor
-		if path != "" {
-			desc, err = util.GetContribDescriptor(path)
-			if err != nil {
-				return err
-			}
-		} else {
-			fmt.Println("Unable to find path for", contrib)
-			return errors.New("Invalid Ref")
-		}
-
-		if Verbose() {
-			fmt.Println("Path of contrib descriptor", desc)
-		}
-
-		if desc == nil {
-			continue
-		}
-		data := struct {
-			Name        string `json:"name"`
-			Type        string `json:"type"`
-			Description string `json:"description"`
-			Homepage    string `json:"homepage"`
-			Ref         string `json:"ref"`
-			Path        string `json:"path"`
-		}{
-			desc.Name,
-			desc.Type,
-			desc.Description,
-			desc.Homepage,
-			contrib.ModulePath(),
-			getDescriptorFile(path),
-		}
-
-		result = append(result, data)
-	}
-	if format {
-		resp, err := json.MarshalIndent(result, "", "  ")
-		if err != nil {
-			return err
-		}
-
-		fmt.Fprintf(os.Stdout, "%v \n", string(resp))
-	}
-
-	return nil
-}
-
-func getDescriptorFile(path string) string {
-	files, err := ioutil.ReadDir(path)
-	if err != nil {
-		return ""
-	}
-
-	for _, f := range files {
-		if strings.HasSuffix(f.Name(), ".json") {
-			return filepath.Join(path, f.Name())
-		}
-	}
-	return ""
 }

@@ -18,23 +18,8 @@ const (
 	pkgLegacySupport = "github.com/project-flogo/legacybridge"
 )
 
-func IsLegacySupportRequired(desc *util.FlogoContribDescriptor, path, pkg string, genMetadata bool) (bool, error) {
-
-	if desc != nil && desc.Ref != "" {
-		if genMetadata {
-			err := createLegacyMetadata(path, desc.GetContribType(), pkg)
-			if err != nil {
-				return false, err
-			}
-		}
-
-		return true, nil
-	}
-
-	return false, nil
-}
-
 func InstallLegacySupport(project common.AppProject) error {
+	//todo make sure we only install once
 	pkgLegacySupportImport, err := util.NewFlogoImportFromPath(pkgLegacySupport)
 	if err != nil {
 		return err
@@ -46,7 +31,7 @@ func InstallLegacySupport(project common.AppProject) error {
 	return err
 }
 
-func createLegacyMetadata(path, contribType, contribPkg string) error {
+func CreateLegacyMetadata(path, contribType, contribPkg string) error {
 
 	var mdGoFilePath string
 
