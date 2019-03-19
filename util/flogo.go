@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	fpath "path"
 	"path/filepath"
 	"strings"
 )
@@ -42,6 +43,13 @@ type FlogoTriggerConfig struct {
 	Id   string `json:"id"`
 	Ref  string `json:"ref"`
 	Type string `json:"type"`
+}
+
+type AppConfig struct {
+	Imports   []string      `json:"imports,omitempty"`
+	Triggers  []interface{} `json:"triggers"`
+	Resources []interface{} `json:"resources,omitempty"`
+	Actions   []interface{} `json:"actions,omitempty"`
 }
 
 // FlogoAppDescriptor is the descriptor for a Flogo application
@@ -235,30 +243,6 @@ func ReadContribDescriptor(descriptorFile string) (*FlogoContribDescriptor, erro
 	return descriptor, nil
 }
 
-func GetAllImports(path string) ([]string, error) {
-
-	var results []string
-	bytes, err := ioutil.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
-	data := string(bytes)
-
-	pkgs := strings.Split(data[strings.Index(data, "(")+1:], "\n") //Get individual rows containing pkgs.
-
-	for _, pkg := range pkgs {
-
-		// Remove last line containing ")" and any empty rows
-		if !strings.Contains(pkg, ")") && len(pkg) != 0 {
-			result := strings.Replace(strings.TrimSpace(pkg), "\"", "", -1)
-			results = append(results, strings.TrimSpace(strings.Replace(result, "_", "", -1)))
-
-		}
-	}
-
-	return results, nil
-}
-
 func ParseImportPath(path string) (string, string) {
 
 	// If @ is specified split
@@ -270,4 +254,91 @@ func ParseImportPath(path string) (string, string) {
 
 	}
 	return path, ""
+}
+
+func GetImportsFromJSON(path string) (Imports, error) {
+
+	appConfig := &AppConfig{}
+	//fmt.Println("Path is", path)
+	descriptorJson, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+
+	bytes, err := ioutil.ReadAll(descriptorJson)
+	if err != nil {
+		return nil, err
+	}
+
+	err = json.Unmarshal(bytes, appConfig)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Unable to marshal ")
+		return nil, err
+	}
+
+	refs := getRefsFromConfig(appConfig)
+	var result Imports
+
+	for _, key := range refs {
+		found := false
+
+		for _, contrib := range appConfig.Imports {
+			flogoImport, err := ParseImport(contrib)
+			if err != nil {
+				return nil, err
+			}
+			if fpath.Base(flogoImport.GoImportPath()) == key || flogoImport.Alias() == key {
+				found = true
+
+				result = append(result, flogoImport)
+			}
+		}
+		//
+		if !found {
+			flogoImport, err := ParseImport(key)
+			if err != nil {
+				return nil, err
+			}
+			result = append(result, flogoImport)
+		}
+
+	}
+	return result, nil
+}
+
+func getRefsFromConfig(appConfig *AppConfig) []string {
+	var results []string
+
+	results = append(results, extractDependencies(appConfig.Triggers)...)
+
+	results = append(results, extractDependencies(appConfig.Resources)...)
+
+	results = append(results, extractDependencies(appConfig.Actions)...)
+
+	return results
+}
+
+func extractDependencies(resource interface{}) []string {
+	var refs []string
+	switch resource.(type) {
+	case map[string]interface{}:
+
+		for key, val := range resource.(map[string]interface{}) {
+			//Type is deprecated use ref instead.
+			if key == "ref" {
+				val = strings.Trim(val.(string), "#")
+				refs = append(refs, val.(string))
+				return refs
+			}
+			refs = append(refs, extractDependencies(resource.(map[string]interface{})[key])...)
+		}
+	case []interface{}:
+
+		for i := 0; i < len(resource.([]interface{})); i++ {
+			refs = append(refs, extractDependencies(resource.([]interface{})[i])...)
+		}
+	default:
+		return append(refs)
+	}
+	return refs
 }

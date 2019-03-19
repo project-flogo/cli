@@ -61,7 +61,7 @@ $ flogo help build
 This command is used to install a contribution to your project.
 
 ```
-$ flogo install github.com/skothari-tibco/csvtimer
+$ flogo install github.com/project-flogo/aws/trigger/lambda
 ```
 
 ### plugin
@@ -69,9 +69,9 @@ $ flogo install github.com/skothari-tibco/csvtimer
 This command is used to install a plugin to your cli.
 
 ```
-$ flogo plugin install github.com/skothari-tibco/walrus
+$ flogo plugin install `path_to_plugin`
 
-$ flogo walrus
+$ flogo `your_command`
 ```
 
 ### Global Flags
@@ -132,5 +132,5 @@ var sayCmd = &cobra.Command{
 * Host your Repo.
 * Install the plugin using following command:
 ```
-$ flogo plugin install github.com/skothari-tibco/walrus
+$ flogo plugin install `path_to_plugin`
 ```
