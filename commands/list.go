@@ -10,15 +10,26 @@ import (
 )
 
 var json bool
-var all bool
+var orphaned bool
+var filter string
 
 var listCmd = &cobra.Command{
 	Use:   "list [flags]",
-	Short: "list used flogo contributions",
-	Long:  "List used flogo contributions",
+	Short: "list installed flogo contributions",
+	Long:  "List installed flogo contributions",
 	Run: func(cmd *cobra.Command, args []string) {
 
-		err := api.ListPackages(common.CurrentProject(), json, all)
+		if orphaned {
+			err := api.ListOrphanedRefs(common.CurrentProject(), json)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+				os.Exit(1)
+			}
+
+			return
+		}
+
+		err := api.ListContribs(common.CurrentProject(), json, filter)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
@@ -28,6 +39,8 @@ var listCmd = &cobra.Command{
 
 func init() {
 	listCmd.Flags().BoolVarP(&json, "json", "j", true, "print in json format")
-	listCmd.Flags().BoolVarP(&all, "all", "a", false, "print all imports")
+	listCmd.Flags().BoolVarP(&orphaned, "orphaned", "", false, "list orphaned refs")
+	listCmd.Flags().StringVarP(&listFilter, "filter", "f", "", "apply list filter [used, unused]")
+
 	rootCmd.AddCommand(listCmd)
 }
