@@ -174,46 +174,51 @@ func createAppJson(dm util.DepManager, appDir, appName, appJson string) error {
 
 // importDependencies import all dependencies
 func importDependencies(project common.AppProject) error {
-	imports, err := util.GetImports(filepath.Join(project.Dir(), fileFlogoJson))
+
+	ai, err := util.GetAppImports(filepath.Join(project.Dir(), fileFlogoJson), project.DepManager(), true)
 	if err != nil {
 		return err
 	}
 
-	project.AddImports(true, imports...)
+	imports := ai.GetAllImports()
+
+	err = project.AddImports(true, imports...)
+	if err != nil {
+		return err
+	}
 
 	legacySupportRequired := false
-	for _, imp := range imports {
 
-		path, err := project.GetPath(imp)
+	for _, details := range ai.GetAllImportDetails() {
+
+		path, err := project.GetPath(details.Imp)
 		if err != nil {
 			return err
 		}
 
-		desc, err := util.GetContribDescriptor(path)
+		desc := details.ContribDesc
 
 		if desc != nil {
 
 			cType := desc.GetContribType()
 			if desc.IsLegacy {
+				legacySupportRequired = true
 				cType = "legacy " + desc.GetContribType()
+				err := CreateLegacyMetadata(path, desc.GetContribType(), details.Imp.GoImportPath())
+				if err != nil {
+					return err
+				}
 			}
 
-			fmt.Printf("Installed %s: %s\n", cType, imp)
+			fmt.Printf("Installed %s: %s\n", cType, details.Imp)
 			//instStr := fmt.Sprintf("Installed %s:", cType)
 			//fmt.Printf("%-20s %s\n", instStr, imp)
-		}
-
-		legacy, err := IsLegacySupportRequired(desc, path, imp.GoImportPath(), true)
-		if err != nil {
-			return err
-		}
-		if legacy {
-			legacySupportRequired = true
 		}
 	}
 
 	if legacySupportRequired {
-		InstallLegacySupport(project)
+		err := InstallLegacySupport(project)
+		return err
 	}
 
 	return nil
