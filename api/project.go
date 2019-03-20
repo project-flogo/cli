@@ -1,19 +1,16 @@
 package api
 
 import (
-	"encoding/json"
 	"fmt"
 	"go/parser"
 	"go/printer"
 	"go/token"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
 
 	"github.com/project-flogo/cli/common"
 	"github.com/project-flogo/cli/util"
-	"github.com/project-flogo/core/app" // dependency to core ensures the CLI always uses an up-to-date struct for JSON manipulation (this dependency already exists implicitly in the "flogo create" command)
 )
 
 const (
@@ -106,6 +103,35 @@ func (p *appProjectImpl) GetPath(flogoImport util.Import) (string, error) {
 	return p.dm.GetPath(flogoImport)
 }
 
+func (p *appProjectImpl) GetGoImports(withVersion bool) ([]util.Import, error) {
+	importsFile := filepath.Join(p.SrcDir(), fileImportsGo)
+
+	fset := token.NewFileSet()
+	file, err := parser.ParseFile(fset, importsFile, nil, parser.ImportsOnly)
+	if err != nil {
+		return nil, err
+	}
+
+	//if withVersion, parse go.mod file for version information
+	//goModImports, err := p.dm.GetAllImports()
+	//if err != nil {
+	//	return nil, err
+	//}
+
+	var imports []util.Import
+	for _, is := range file.Imports {
+
+		imp, err := util.ParseImport(is.Path.Value)
+		if err != nil {
+			return nil, err
+		}
+
+		imports = append(imports, imp)
+	}
+
+	return imports, nil
+}
+
 func (p *appProjectImpl) addImportsInGo(ignoreError bool, imports ...util.Import) error {
 	importsFile := filepath.Join(p.SrcDir(), fileImportsGo)
 
@@ -142,20 +168,11 @@ func (p *appProjectImpl) addImportsInGo(ignoreError bool, imports ...util.Import
 }
 
 func (p *appProjectImpl) addImportsInJson(ignoreError bool, imports ...util.Import) error {
-	appDescriptorFile := filepath.Join(p.appDir, fileFlogoJson)
-	appDescriptorJsonFile, err := os.Open(appDescriptorFile)
+
+	appDescriptor, err := readAppDescriptor(p)
 	if err != nil {
 		return err
 	}
-	defer appDescriptorJsonFile.Close()
-
-	appDescriptorData, err := ioutil.ReadAll(appDescriptorJsonFile)
-	if err != nil {
-		return err
-	}
-
-	var appDescriptor app.Config
-	json.Unmarshal([]byte(appDescriptorData), &appDescriptor)
 
 	// list existing imports in JSON to avoid duplicates
 	existingImports := make(map[string]util.Import)
@@ -187,14 +204,7 @@ func (p *appProjectImpl) addImportsInJson(ignoreError bool, imports ...util.Impo
 	}
 	appDescriptor.Imports = newImport
 
-	appDescriptorUpdated, err := json.MarshalIndent(appDescriptor, "", "  ")
-	if err != nil {
-		return err
-	}
-
-	appDescriptorUpdatedJson := string(appDescriptorUpdated)
-
-	err = ioutil.WriteFile(appDescriptorFile, []byte(appDescriptorUpdatedJson), 0644)
+	err = writeAppDescriptor(p, appDescriptor)
 	if err != nil {
 		return err
 	}

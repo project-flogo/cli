@@ -13,4 +13,6 @@ type AppProject interface {
 	RemoveImports(imports ...string) error
 	GetPath(flogoImport util.Import) (string, error)
 	DepManager() util.DepManager
+
+	GetGoImports(withVersion bool) ([]util.Import, error)
 }

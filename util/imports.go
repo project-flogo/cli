@@ -38,6 +38,10 @@ func NewFlogoImport(modulePath, relativeImportPath, version, alias string) Impor
 	return &FlogoImport{modulePath: modulePath, relativeImportPath: relativeImportPath, version: version, alias: alias}
 }
 
+func NewFlogoImportWithVersion(imp Import, version string) Import {
+	return &FlogoImport{modulePath: imp.ModulePath(), relativeImportPath: imp.RelativeImportPath(), version: version, alias: imp.Alias()}
+}
+
 type Import interface {
 	fmt.Stringer
 

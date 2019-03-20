@@ -3,120 +3,153 @@ package api
 import (
 	"fmt"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 
 	"github.com/project-flogo/cli/common"
 	"github.com/project-flogo/cli/util"
+	"github.com/project-flogo/core/app"
 )
 
-func registerImports(project common.AppProject, appDesc *util.FlogoAppDescriptor) error {
+func ListProjectImports(project common.AppProject) error {
 
-	for _, anImport := range appDesc.Imports {
-		err := registerImport(project, anImport)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func registerImport(project common.AppProject, anImport string) error {
-
-	parts := strings.Split(anImport, " ")
-
-	var alias string
-	var ref string
-	numParts := len(parts)
-	if numParts == 1 {
-		ref = parts[0]
-		alias = path.Base(ref)
-	} else if numParts == 2 {
-		alias = parts[0]
-		ref = parts[1]
-	} else {
-		return fmt.Errorf("invalid import %s", anImport)
-	}
-
-	if alias == "" || ref == "" {
-		return fmt.Errorf("invalid import %s", anImport)
-	}
-
-	ct, err := getContribType(project, ref)
+	appImports, err := util.GetAppImports(filepath.Join(project.Dir(), fileFlogoJson), project.DepManager(), false)
 	if err != nil {
 		return err
 	}
 
-	if ct == "" {
-		return fmt.Errorf("unable to determine contribution type for import: %s", anImport)
+	for _, imp := range appImports.GetAllImports() {
+
+		fmt.Fprintf(os.Stdout, "  %s\n", imp)
 	}
 
-	RegisterAlias(ct, alias, ref)
 	return nil
 }
 
-func getContribType(project common.AppProject, ref string) (string, error) {
+func SyncProjectImports(project common.AppProject) error {
 
-	refAsFlogoImport, err := util.NewFlogoImportFromPath(ref)
+	appImports, err := util.GetAppImports(filepath.Join(project.Dir(), fileFlogoJson), project.DepManager(), false)
 	if err != nil {
-		return "", err
+		return err
 	}
 
-	path, err := project.GetPath(refAsFlogoImport)
+	goImports, err := project.GetGoImports(false)
 	if err != nil {
-		return "", err
-	}
-	var descriptorPath string
-
-	if _, err := os.Stat(filepath.Join(path, fileDescriptorJson)); err == nil {
-		descriptorPath = filepath.Join(path, fileDescriptorJson)
-
-	} else if _, err := os.Stat(filepath.Join(path, "activity.json")); err == nil {
-		descriptorPath = filepath.Join(path, "activity.json")
-	} else if _, err := os.Stat(filepath.Join(path, "trigger.json")); err == nil {
-		descriptorPath = filepath.Join(path, "trigger.json")
-	} else if _, err := os.Stat(filepath.Join(path, "action.json")); err == nil {
-		descriptorPath = filepath.Join(path, "action.json")
+		return err
 	}
 
-	if _, err := os.Stat(descriptorPath); descriptorPath != "" && err == nil {
+	appImportsMap := make(map[string]util.Import)
+	for _, imp := range appImports.GetAllImports() {
+		appImportsMap[imp.GoImportPath()] = imp
+	}
 
-		desc, err := util.ReadContribDescriptor(descriptorPath)
-		if err != nil {
-			return "", err
+	goImportsMap := make(map[string]util.Import)
+	for _, imp := range goImports {
+		goImportsMap[imp.GoImportPath()] = imp
+	}
+
+	var toAdd []util.Import
+	for goPath, imp := range appImportsMap {
+		if _, ok := goImportsMap[goPath]; !ok {
+			toAdd = append(toAdd, imp)
+			if Verbose() {
+				fmt.Println("Adding missing Go import: ", goPath)
+			}
 		}
-
-		return desc.Type, nil
 	}
 
-	return "", nil
+	var toRemove []string
+	for goPath := range goImportsMap {
+		if _, ok := appImportsMap[goPath]; !ok {
+			toRemove = append(toRemove, goPath)
+			if Verbose() {
+				fmt.Println("Removing extraneous Go import: ", goPath)
+			}
+		}
+	}
+
+	err = project.RemoveImports(toRemove...)
+	if err != nil {
+		return err
+	}
+
+	err = project.AddImports(false, toAdd...)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
-var aliases = make(map[string]map[string]string)
-
-func RegisterAlias(contribType string, alias, ref string) {
-
-	aliasToRefMap, exists := aliases[contribType]
-	if !exists {
-		aliasToRefMap = make(map[string]string)
-		aliases[contribType] = aliasToRefMap
+func ResolveProjectImports(project common.AppProject) error {
+	if Verbose() {
+		fmt.Fprintln(os.Stdout, "Synchronizing project imports")
+	}
+	err := SyncProjectImports(project)
+	if err != nil {
+		return err
 	}
 
-	aliasToRefMap[alias] = ref
+	if Verbose() {
+		fmt.Fprintln(os.Stdout, "Reading flogo.json")
+	}
+	appDescriptor, err := readAppDescriptor(project)
+	if err != nil {
+		return err
+	}
+
+	if Verbose() {
+		fmt.Fprintln(os.Stdout, "Updating flogo.json import versions")
+	}
+	err = updateDescriptorImportVersions(project, appDescriptor)
+	if err != nil {
+		return err
+	}
+
+	if Verbose() {
+		fmt.Fprintln(os.Stdout, "Saving updated flogo.json")
+	}
+	err = writeAppDescriptor(project, appDescriptor)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
-func GetAliasRef(contribType string, alias string) (string, bool) {
-	aliasToRefMap, exists := aliases[contribType]
-	if !exists {
-		return "", false
+func updateDescriptorImportVersions(project common.AppProject, appDescriptor *app.Config) error {
+
+	goModImports, err := project.DepManager().GetAllImports()
+	if err != nil {
+		return err
 	}
 
-	ref, exists := aliasToRefMap[alias]
-	if !exists {
-		return "", false
+	appImports, err := util.ParseImports(appDescriptor.Imports)
+	if err != nil {
+		return err
 	}
 
-	return ref, true
+	var result []string
+
+	for _, appImport := range appImports {
+
+		if goModImport, ok := goModImports[appImport.ModulePath()]; ok {
+			updatedImp := util.NewFlogoImportWithVersion(appImport, goModImport.Version())
+			result = append(result, updatedImp.CanonicalImport())
+		} else {
+			//not found, look for import of parent package
+			for pkg, goModImport := range goModImports {
+				if strings.Contains(appImport.ModulePath(), pkg) {
+					updatedImp := util.NewFlogoImportWithVersion(appImport, goModImport.Version())
+					result = append(result, updatedImp.CanonicalImport())
+				}
+			}
+		}
+	}
+
+	appDescriptor.Imports = result
+
+	return nil
 }
+
+

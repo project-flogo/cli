@@ -18,6 +18,13 @@ const (
 	fileImportsGo = "imports.go"
 )
 
+func init() {
+	pluginCmd.AddCommand(pluginInstallCmd)
+	pluginCmd.AddCommand(pluginListCmd)
+	pluginCmd.AddCommand(pluginUpdateCmd)
+	rootCmd.AddCommand(pluginCmd)
+}
+
 var (
 	goPath     = os.Getenv("GOPATH")
 	cliPath    = filepath.Join(goPath, filepath.Join("src", "github.com", "project-flogo", "cli"))
@@ -26,17 +33,17 @@ var (
 
 var pluginCmd = &cobra.Command{
 	Use:   "plugin",
-	Short: "manage cli plugins",
-	Long:  "Manage cli plugins",
+	Short: "manage CLI plugins",
+	Long:  "Manage CLI plugins",
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		common.SetVerbose(verbose)
 	},
 }
 
-var pluginInstall = &cobra.Command{
+var pluginInstallCmd = &cobra.Command{
 	Use:   "install <plugin>",
-	Short: "install cli plugin",
-	Long:  "Installs a cli plugin",
+	Short: "install CLI plugin",
+	Long:  "Installs a CLI plugin",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 
@@ -54,16 +61,16 @@ var pluginInstall = &cobra.Command{
 
 		added, err := addPlugin(pluginPkg)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			fmt.Fprintf(os.Stderr, "Error adding plugin: %v\n", err)
 			os.Exit(1)
 		}
 
 		if added {
 			err = updateCLI()
 			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error updating CLI: %v\n", err)
 				//remove plugin import on failure
 				modifyPluginImports(pluginPkg, true)
-				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 				os.Exit(1)
 			}
 
@@ -74,20 +81,21 @@ var pluginInstall = &cobra.Command{
 	},
 }
 
-var pluginList = &cobra.Command{
+var pluginListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "list installed plugins",
-	Long:  "Lists installed cli plugins",
+	Long:  "Lists installed CLI plugins",
 	Run: func(cmd *cobra.Command, args []string) {
 		for _, cmd := range common.GetPlugins() {
 			fmt.Println(cmd.Name())
 		}
 	},
 }
-var pluginUpdate = &cobra.Command{
+
+var pluginUpdateCmd = &cobra.Command{
 	Use:   "update <plugin>",
 	Short: "update plugin",
-	Long:  "Updates the specified installed cli plugin",
+	Long:  "Updates the specified installed CLI plugin",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 
@@ -104,24 +112,17 @@ var pluginUpdate = &cobra.Command{
 
 		err = util.ExecCmd(exec.Command("go", "get", "-u", plugin), cliCmdPath)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			fmt.Fprintf(os.Stderr, "Error updating plugin: %v\n", err)
 			os.Exit(1)
 		}
 
 		err = updateCLI()
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			fmt.Fprintf(os.Stderr, "Error updating CLI: %v\n", err)
 			os.Exit(1)
 		}
 		fmt.Printf("Updated plugin\n")
 	},
-}
-
-func init() {
-	rootCmd.AddCommand(pluginCmd)
-	pluginCmd.AddCommand(pluginInstall)
-	pluginCmd.AddCommand(pluginList)
-	pluginCmd.AddCommand(pluginUpdate)
 }
 
 func useBuildGoMod() error {
@@ -146,25 +147,36 @@ func useBuildGoMod() error {
 		fmt.Printf("Switching to plugin build go.mod")
 	}
 
-	os.Rename(baseGoMod, bakGoMod)
-	os.Rename(buildGoMod, baseGoMod)
+	err := os.Rename(baseGoMod, bakGoMod)
+	if err != nil {
+		return err
+	}
+
+	err = os.Rename(buildGoMod, baseGoMod)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
 
-func restoreGoMod() error {
+func restoreGoMod() {
 
 	if verbose {
-		fmt.Printf("Restoring default cli go.mod")
+		fmt.Printf("Restoring default CLI go.mod")
 	}
 	baseGoMod := filepath.Join(cliPath, "go.mod")
 	bakGoMod := filepath.Join(cliPath, "go.mod.bak")
 	buildGoMod := filepath.Join(cliPath, "go.mod.build")
 
-	os.Rename(baseGoMod, buildGoMod)
-	os.Rename(bakGoMod, baseGoMod)
-
-	return nil
+	err := os.Rename(baseGoMod, buildGoMod)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+	}
+	err = os.Rename(bakGoMod, baseGoMod)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+	}
 }
 
 func addPlugin(pluginPkg string) (bool, error) {
@@ -195,17 +207,28 @@ func updateCLI() error {
 
 	backupExe := exe + ".bak"
 	if _, err := os.Stat(exe); err == nil {
-		os.Rename(exe, backupExe)
+		err = os.Rename(exe, backupExe)
+		if err != nil {
+			return err
+		}
 	}
 
 	err = util.ExecCmd(exec.Command("go", "build"), cliCmdPath)
 	if err != nil {
-		os.Rename(backupExe, exe)
+		osErr := os.Rename(backupExe, exe)
+		fmt.Fprintf(os.Stderr, "Error: %v\n", osErr)
 		return err
 	}
 
-	os.Rename(filepath.Join(cliCmdPath, "flogo"), exe)
-	os.Remove(backupExe)
+	err = os.Rename(filepath.Join(cliCmdPath, "flogo"), exe)
+	if err != nil {
+		return err
+	}
+
+	err = os.Remove(backupExe)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
