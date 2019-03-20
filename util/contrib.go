@@ -52,10 +52,14 @@ func GetContribDescriptorFromImport(depManager DepManager, contribImport Import)
 func GetContribDescriptor(contribPath string) (*FlogoContribDescriptor, error) {
 
 	var descriptorPath string
+	oldDescriptor := false
 
 	for _, descriptorName := range contribDescriptors {
 		dPath := filepath.Join(contribPath, descriptorName)
 		if _, err := os.Stat(dPath); err == nil {
+			if descriptorName != "descriptor.json" {
+				oldDescriptor = true
+			}
 			descriptorPath = dPath
 		}
 	}
@@ -65,17 +69,16 @@ func GetContribDescriptor(contribPath string) (*FlogoContribDescriptor, error) {
 		return nil, nil
 	}
 
-	if _, err := os.Stat(descriptorPath); descriptorPath != "" && err == nil {
-
-		desc, err := ReadContribDescriptor(descriptorPath)
-		if err != nil {
-			return nil, err
-		}
-
-		return desc, nil
+	desc, err := ReadContribDescriptor(descriptorPath)
+	if err != nil {
+		return nil, err
 	}
 
-	return nil, nil
+	if desc.Ref != "" && oldDescriptor {
+		desc.IsLegacy = true
+	}
+
+	return desc, nil
 }
 
 func ReadContribDescriptor(descriptorFile string) (*FlogoContribDescriptor, error) {
