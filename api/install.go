@@ -3,10 +3,11 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/project-flogo/cli/common"
-	"github.com/project-flogo/cli/util"
 	"io/ioutil"
 	"os"
+
+	"github.com/project-flogo/cli/common"
+	"github.com/project-flogo/cli/util"
 )
 
 func InstallPackage(project common.AppProject, pkg string) error {
@@ -33,7 +34,7 @@ func InstallPackage(project common.AppProject, pkg string) error {
 	desc, err := util.GetContribDescriptor(path)
 	if desc != nil {
 		cType := desc.GetContribType()
-		if desc.IsLegacy {
+		if desc.Ref != "" {
 			legacySupportRequired = true
 			cType = "legacy " + desc.GetContribType()
 			err := CreateLegacyMetadata(path, desc.GetContribType(), pkg)
