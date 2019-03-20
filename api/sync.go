@@ -48,7 +48,7 @@ func updateGoMod(project common.AppProject, pkgs util.Imports) error {
 }
 
 func ResolvePkg(project common.AppProject) error {
-	/err := SyncPkg(project)
+	err := SyncPkg(project)
 	if err != nil {
 		return err
 	}
@@ -91,8 +91,8 @@ func addImportToJSON(project common.AppProject, imports map[string]util.Import) 
 		if val, ok := imports[i.ModulePath()]; ok {
 			result = append(result, val.CanonicalImport())
 		} else {
-			//The import present is present 
-			// in the sub dir of a import. 
+			//The import present is present
+			// in the sub dir of a import.
 			//Eg. ml/activity/inference is present in ml/ .
 			for key, val := range imports {
 				if strings.Contains(i.ModulePath(), key) {
