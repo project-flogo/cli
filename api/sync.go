@@ -47,10 +47,10 @@ func updateGoMod(project common.AppProject, pkgs util.Imports) error {
 }
 
 func ResolvePkg(project common.AppProject) error {
-	/*err := SyncPkg(project)
+	err := SyncPkg(project)
 	if err != nil {
 		return err
-	}*/
+	}
 	imports, err := project.DepManager().GetAllImports()
 	if err != nil {
 		return err
@@ -85,9 +85,9 @@ func addImportToJSON(project common.AppProject, imports map[string]util.Import) 
 
 	var result []string
 
-	for _, Import := range parsedImports {
+	for _, i := range parsedImports {
 
-		if val, ok := imports[Import.ModulePath()]; ok {
+		if val, ok := imports[i.ModulePath()]; ok {
 			result = append(result, val.CanonicalImport())
 		}
 
