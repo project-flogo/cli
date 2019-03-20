@@ -36,9 +36,9 @@ func init() {
 }
 
 var myCmd = &cobra.Command{
-	Use:              "mycmd",
-	Short:            "says hello world",
-	Long:             `This plugin command says hello world`,
+	Use:	"mycmd",
+	Short:	"says hello world",
+	Long:	"This plugin command says hello world",
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("Hello World")
 	},
