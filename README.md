@@ -19,8 +19,10 @@
 
 <br/>
 Project Flogo is an open source framework to simplify building efficient & modern serverless functions and edge microservices and _this_ is the cli that makes it all happen. 
+
 FLOGO CLI
 ======================
+
 The Flogo CLI is the primary tool to use when working with a Flogo application.  It is used to create, modify and build Flogo applications
 ## Installation
 ### Prerequisites
