@@ -1,5 +1,4 @@
 # Commands
-=================
 
 - [build](#build) - Build the flogo application
 - [create](#create) - Create a flogo application project
