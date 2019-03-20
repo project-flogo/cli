@@ -14,11 +14,6 @@ import (
 
 const (
 	fileEmbeddedAppGo string = "embeddedapp.go"
-	fileShimSupportGo string = "shim_support.go"
-	fileShimGo        string = "shim.go"
-	fileBuildGo       string = "build.go"
-	fileMakefile      string = "Makefile"
-	dirShim           string = "shim"
 )
 
 type BuildOptions struct {
@@ -27,15 +22,17 @@ type BuildOptions struct {
 	Shim            string
 }
 
-var fileSampleShimSupport = filepath.Join("examples", "engine", "shim", fileShimSupportGo)
 
 func BuildProject(project common.AppProject, options BuildOptions) error {
 
-	project.DepManager().AddLocalContribForBuild()
+	err := project.DepManager().AddLocalContribForBuild()
+	if err != nil {
+		return err
+	}
 
 	useShim := options.Shim != ""
 
-	err := createEmbeddedAppGoFile(project, options.EmbedConfig || useShim)
+	err = createEmbeddedAppGoFile(project, options.EmbedConfig || useShim)
 	if err != nil {
 		return err
 	}
@@ -82,154 +79,16 @@ func BuildProject(project common.AppProject, options BuildOptions) error {
 	}
 	if _, err := os.Stat(exePath); err == nil {
 		finalExePath := project.Executable()
-		os.MkdirAll(filepath.Dir(finalExePath), os.ModePerm)
+		err = os.MkdirAll(filepath.Dir(finalExePath), os.ModePerm)
+		if err != nil {
+			return err
+		}
 		err = os.Rename(exePath, project.Executable())
-
 		if err != nil {
 			return err
 		}
 	} else {
 		return fmt.Errorf("failed to build application, run with --verbose to see details")
-	}
-
-	return nil
-}
-
-func prepareShim(project common.AppProject, shim string) (bool, error) {
-
-	buf, err := ioutil.ReadFile(filepath.Join(project.Dir(), fileFlogoJson))
-	if err != nil {
-		return false, err
-	}
-
-	flogoJSON := string(buf)
-
-	descriptor, err := util.ParseAppDescriptor(flogoJSON)
-	if err != nil {
-		return false, err
-	}
-
-	err = registerImports(project, descriptor)
-	if err != nil {
-		return false, err
-	}
-
-	for _, trgCfg := range descriptor.Triggers {
-		if trgCfg.Id == shim {
-
-			ref := trgCfg.Ref
-
-			if trgCfg.Ref == "" {
-				found := false
-				ref, found = GetAliasRef("flogo:trigger", trgCfg.Type)
-				if !found {
-					return false, fmt.Errorf("unable to determine ref for trigger: %s", trgCfg.Id)
-				}
-			}
-
-			refImport, err := util.NewFlogoImportFromPath(ref)
-			if err != nil {
-				return false, err
-			}
-
-			path, err := project.GetPath(refImport)
-			if err != nil {
-				return false, err
-			}
-			var shimFilePath string
-
-			shimFilePath = filepath.Join(path, dirShim, fileShimGo)
-
-			if _, err := os.Stat(shimFilePath); err == nil {
-
-				copyFile(shimFilePath, filepath.Join(project.SrcDir(), fileShimGo))
-
-				// Check if this shim based trigger has a gobuild file. If the trigger has a gobuild
-				// execute that file, otherwise check if there is a Makefile to execute
-				goBuildFilePath := filepath.Join(path, dirShim, fileBuildGo)
-
-				makefilePath := filepath.Join(shimFilePath, dirShim, fileMakefile)
-
-				if _, err := os.Stat(goBuildFilePath); err == nil {
-					fmt.Println("This trigger makes use of a go build file...")
-
-					copyFile(goBuildFilePath, filepath.Join(project.SrcDir(), fileBuildGo))
-
-					// Execute go run gobuild.go
-					err = util.ExecCmd(exec.Command("go", "run", fileBuildGo), project.SrcDir())
-
-					if err != nil {
-						return false, err
-					}
-				} else if _, err := os.Stat(makefilePath); err == nil {
-					//look for Makefile and execute it
-					fmt.Println("Make File:", makefilePath)
-
-					copyFile(makefilePath, filepath.Join(project.SrcDir(), fileMakefile))
-
-					// Execute make
-					cmd := exec.Command("make", "-C", project.SrcDir())
-					cmd.Stdout = os.Stdout
-					cmd.Stderr = os.Stderr
-					cmd.Env = util.ReplaceEnvValue(os.Environ(), "GOPATH", project.Dir())
-
-					err = cmd.Run()
-					if err != nil {
-						return false, err
-					}
-				} else {
-					return false, nil
-				}
-			}
-
-			break
-		}
-	}
-
-	return true, nil
-}
-
-func createShimSupportGoFile(project common.AppProject, create bool) error {
-
-	shimSrcPath := filepath.Join(project.SrcDir(), fileShimSupportGo)
-
-	if !create {
-		if _, err := os.Stat(shimSrcPath); err == nil {
-			os.Remove(shimSrcPath)
-			if err != nil {
-				return err
-			}
-		}
-		//
-		//shimSrcPath := filepath.Join(project.SrcDir(), fileShimSupportGo)
-		//
-		//if _, err := os.Stat(shimSrcPath); err == nil {
-		//	os.Remove(shimSrcPath)
-		//	if err != nil {
-		//		return err
-		//	}
-		//}
-		return nil
-	}
-
-	flogoCoreImport, err := util.NewFlogoImportFromPath(flogoCoreRepo)
-	if err != nil {
-		return err
-	}
-
-	corePath, err := project.GetPath(flogoCoreImport)
-	if err != nil {
-		return err
-	}
-
-	bytes, err := ioutil.ReadFile(filepath.Join(corePath, fileSampleShimSupport))
-	if err != nil {
-		return err
-	}
-
-	err = ioutil.WriteFile(shimSrcPath, bytes, 0644)
-	if err != nil {
-		return err
 	}
 
 	return nil
@@ -241,7 +100,7 @@ func createEmbeddedAppGoFile(project common.AppProject, create bool) error {
 
 	if !create {
 		if _, err := os.Stat(embedSrcPath); err == nil {
-			os.Remove(embedSrcPath)
+			err = os.Remove(embedSrcPath)
 			if err != nil {
 				return err
 			}

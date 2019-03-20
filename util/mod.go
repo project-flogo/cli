@@ -345,7 +345,10 @@ func getLatestVersion(path string) string {
 
 	var result Resp
 
-	json.Unmarshal(body, &result)
+	err = json.Unmarshal(body, &result)
+	if err != nil {
+		return ""
+	}
 
 	return result.Name
 

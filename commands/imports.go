@@ -11,42 +11,60 @@ import (
 
 func init() {
 	rootCmd.AddCommand(importsCmd)
-	importsCmd.AddCommand(syncCmd)
-	importsCmd.AddCommand(resolveCmd)
+	importsCmd.AddCommand(importsSyncCmd)
+	importsCmd.AddCommand(importsResolveCmd)
+	importsCmd.AddCommand(importsListCmd)
 }
 
 var importsCmd = &cobra.Command{
 	Use:   "imports",
-	Short: "Manage Imports in the project",
-	Long:  `Manage Imports in the project`,
+	Short: "manage project imports",
+	Long:  `Manage project imports of contributions and dependencies.`,
 	Run: func(cmd *cobra.Command, args []string) {
 
 	},
 }
-var syncCmd = &cobra.Command{
+
+var importsSyncCmd = &cobra.Command{
 	Use:   "sync",
-	Short: "sync a project package",
-	Long:  `Sync a package in the project`,
+	Short: "sync Go imports to project imports",
+	Long:  `Synchronize Go imports to project imports.`,
 	Run: func(cmd *cobra.Command, args []string) {
 
-		err := api.SyncPkg(common.CurrentProject())
+		err := api.SyncProjectImports(common.CurrentProject())
 
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			fmt.Fprintf(os.Stderr, "Error synchronzing imports: %v\n", err)
 			os.Exit(1)
 		}
 	},
 }
-var resolveCmd = &cobra.Command{
+
+var importsResolveCmd = &cobra.Command{
 	Use:   "resolve",
-	Short: "resolve a project package",
-	Long:  `Resolve the packages in the project`,
+	Short: "resolve project imports to installed version",
+	Long:  `Resolves all project imports to current installed version.`,
 	Run: func(cmd *cobra.Command, args []string) {
 
-		err := api.ResolvePkg(common.CurrentProject())
+		err := api.ResolveProjectImports(common.CurrentProject())
 
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			fmt.Fprintf(os.Stderr, "Error resolving import versions: %v\n", err)
+			os.Exit(1)
+		}
+	},
+}
+
+var importsListCmd = &cobra.Command{
+	Use:   "list",
+	Short: "list project imports",
+	Long:  `List all the project imports`,
+	Run: func(cmd *cobra.Command, args []string) {
+
+		err := api.ListProjectImports(common.CurrentProject())
+
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error listing imports: %v\n", err)
 			os.Exit(1)
 		}
 	},

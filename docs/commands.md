@@ -7,7 +7,7 @@
 - [install](#install) - Install a flogo contribution/dependency
 - [list](#list) - List installed flogo contributions
 - [plugin](#plugin) - Manage CLI plugins
-- [update](#update) - Update an application dependency
+- [update](#update) - Update an application contribution/dependency
 
 ### Global Flags
 ```
@@ -25,9 +25,9 @@ Usage:
 
 Flags:
   -e, --embed         embed configuration in binary
-  -f, --file string   specify flogo.json file
+  -f, --file string   specify a flogo.json to build
   -o, --optimize      optimize build
-      --shim string   specify shim trigger   
+      --shim string   use shim trigger   
 ```
 _**Note:** the optimize flag removes unused trigger, acitons and activites from the built binary._
 
@@ -54,8 +54,8 @@ Usage:
   flogo create [flags] [appName]
 
 Flags:
-      --cv string     core library version (ex. master)
-  -f, --file string   specify flogo.json file
+      --cv string     specify core library version (ex. master)
+  -f, --file string   specify a flogo.json to create project from
 ```
 
 _**Note:** when using the --cv flag to specify a version, the exact version specified might not be used the project.  The application will install the version that satisfies all the dependency constraints.  Typically this flag is used when trying to use the master version of the core library._
@@ -91,16 +91,16 @@ $ flogo help build
 ```
 ## imports
 
-This command helps manage with project depedency imports
+This command helps manage project imports of contributions and dependencies.
 
 ```
 Usage:
   flogo imports [command]
 
 Available Commands:
-  sync     sync all go imports to project imports
-  resolve  resolve project import versions
-  list     list all project imports
+  sync     sync Go imports to project imports
+  resolve  resolve project imports to installed version
+  list     list project imports
 ```   
 
 ## install
@@ -113,7 +113,7 @@ Usage:
 
 Flags:
   -f, --file string    specify contribution bundle
-  -l, --local string   local path to contribution
+  -l, --local string   specify path to local contribution/dependency
 ```
       
 ### Examples
@@ -166,7 +166,7 @@ Usage:
   flogo plugin [command]
 
 Available Commands:
-  install     install cli plugin
+  install     install CLI plugin
   list        list installed plugins
   update      update plugin
 ```      
@@ -191,5 +191,27 @@ $ flogo plugin install github.com/myuser/myplugin
 
 $ flogo `your_command`
 ```
-
+<br>
 More information on Flogo CLI plugins can be found [here](plugins.md)
+
+## imports
+
+This command updates a contribution or dependency in the project.
+
+```
+Usage:
+  flogo update [flags] <contribution|dependency>
+
+```   
+### Examples
+Update you log activity to master:
+
+```bash
+$ flogo update github.com/project-flogo/contrib/activity/log@master
+```
+
+Update your flogo core library to latest master:
+
+```bash
+$ flogo update github.com/project-flogo/core@master
+```

@@ -14,16 +14,16 @@ func init() {
 }
 
 var updateCmd = &cobra.Command{
-	Use:   "update [flags] <package>",
-	Short: "update a project package",
-	Long:  `Updates a package in the project`,
+	Use:   "update [flags] <contribution|dependency>",
+	Short: "update a project contribution/dependency",
+	Long:  `Updates a contribution or dependency in the project`,
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 
 		err := api.UpdatePkg(common.CurrentProject(), args[0])
 
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			fmt.Fprintf(os.Stderr, "Error updating contribution/dependency: %v\n", err)
 			os.Exit(1)
 		}
 	},

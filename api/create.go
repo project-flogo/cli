@@ -151,7 +151,10 @@ func setupAppDirectory(dm util.DepManager, appPath, coreVersion string) error {
 	flogoCoreImport := util.NewFlogoImport(flogoCoreRepo, "", coreVersion, "")
 
 	// add & fetch the core library
-	dm.AddDependency(flogoCoreImport)
+	err = dm.AddDependency(flogoCoreImport)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
