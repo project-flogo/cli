@@ -1,8 +1,8 @@
 # Plugins
-=================
+
 The Flogo CLI has support for plugins.  These plugins can be used to extend the Flogo CLI command.
 
-## Creating a CLI Plugin
+## Creating a CLI plugin
 
 First lets setup the go project:
 
@@ -16,7 +16,7 @@ $ cd myplugin
 # Initialize the Go module information
 $ go mod init github.com/myuser/myplugin
 
-# Edit/Create plugin code
+# Edit/Create the plugin code
 $ vi myplugin.go
 ```
 
@@ -27,7 +27,7 @@ package myplugin
 
 import (
 	"fmt"
-    "github.com/project-flogo/cli/common" // Flogo CLI support code
+	"github.com/project-flogo/cli/common" // Flogo CLI support code
 	"github.com/spf13/cobra"
 )
 
@@ -40,7 +40,7 @@ var myCmd = &cobra.Command{
 	Short:            "says hello world",
 	Long:             `This plugin command says hello world`,
 	Run: func(cmd *cobra.Command, args []string) {
-       fmt.Println("Hello World")
+		fmt.Println("Hello World")
 	},
 }
 ```
@@ -53,9 +53,9 @@ $ go mod tidy
 Now you are ready to test out your plugin.  First you must host your plugin in your git repository.  Then you are ready to install and run your plugin
 
 ```
-# Install plugin
+# Install your plugin
 $ flogo plugin install github.com/myuser/myplugin
 
-# Run plugin command
+# Run your new plugin command
 $ flogo mycmd
 ```
