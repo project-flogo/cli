@@ -38,7 +38,6 @@ func (d *FlogoContribDescriptor) GetContribType() string {
 	return ""
 }
 
-
 func GetContribDescriptorFromImport(depManager DepManager, contribImport Import) (*FlogoContribDescriptor, error) {
 
 	contribPath, err := depManager.GetPath(contribImport)
@@ -95,6 +94,10 @@ func ReadContribDescriptor(descriptorFile string) (*FlogoContribDescriptor, erro
 	err = json.Unmarshal(bytes, descriptor)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse descriptor '%s': %s", descriptorFile, err.Error())
+	}
+
+	if descriptor.Ref != "" {
+		descriptor.IsLegacy = true
 	}
 
 	return descriptor, nil

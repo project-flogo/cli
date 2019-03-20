@@ -34,7 +34,7 @@ func InstallPackage(project common.AppProject, pkg string) error {
 	desc, err := util.GetContribDescriptor(path)
 	if desc != nil {
 		cType := desc.GetContribType()
-		if desc.Ref != "" {
+		if desc.IsLegacy {
 			legacySupportRequired = true
 			cType = "legacy " + desc.GetContribType()
 			err := CreateLegacyMetadata(path, desc.GetContribType(), pkg)
