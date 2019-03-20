@@ -149,5 +149,6 @@ func ParseImport(flogoImport string) (Import, error) {
 	matches := flogoImportPattern.FindStringSubmatch(flogoImport)
 
 	result := &FlogoImport{modulePath: matches[3], relativeImportPath: matches[5], version: matches[4], alias: matches[2]}
+
 	return result, nil
 }
