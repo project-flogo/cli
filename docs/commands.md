@@ -33,7 +33,7 @@ _**Note:** the optimize flag removes unused trigger, acitons and activites from 
 
 
 ### Examples
-Build the working application
+Build the current project application
 
 ```bash
 $ flogo build
