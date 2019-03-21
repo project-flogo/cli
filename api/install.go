@@ -60,21 +60,19 @@ func InstallPackage(project common.AppProject, pkg string) error {
 func InstallLocalPackage(project common.AppProject, localPath string, pkg string) error {
 
 	project.DepManager().InstallLocalPkg(pkg, localPath)
-
 	return InstallPackage(project, pkg)
 }
 
 func InstallContribBundle(project common.AppProject, path string) error {
 
 	file, err := ioutil.ReadFile(path)
-
 	if err != nil {
 		return err
 	}
 
 	var contribBundleDescriptor util.FlogoContribBundleDescriptor
-	err = json.Unmarshal(file, &contribBundleDescriptor)
 
+	err = json.Unmarshal(file, &contribBundleDescriptor)
 	if err != nil {
 		return err
 	}

@@ -64,14 +64,14 @@ func preRun(cmd *cobra.Command, args []string, verbose bool) {
 	if len(os.Args) > 1 && !builtIn {
 		currentDir, err := os.Getwd()
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error: unable to determine working directory - %s\n", err)
+			fmt.Fprintf(os.Stderr, "Error determining working directory: %v\n", err)
 			os.Exit(1)
 		}
 		appProject := api.NewAppProject(currentDir)
 
 		err = appProject.Validate()
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			fmt.Fprintf(os.Stderr, "Error validating project: %v\n", err)
 			os.Exit(1)
 		}
 

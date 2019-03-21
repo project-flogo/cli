@@ -3,6 +3,7 @@ package util
 import (
 	"errors"
 	"fmt"
+	"path"
 	"regexp"
 )
 
@@ -38,6 +39,10 @@ func NewFlogoImport(modulePath, relativeImportPath, version, alias string) Impor
 	return &FlogoImport{modulePath: modulePath, relativeImportPath: relativeImportPath, version: version, alias: alias}
 }
 
+func NewFlogoImportWithVersion(imp Import, version string) Import {
+	return &FlogoImport{modulePath: imp.ModulePath(), relativeImportPath: imp.RelativeImportPath(), version: version, alias: imp.Alias()}
+}
+
 type Import interface {
 	fmt.Stringer
 
@@ -51,6 +56,7 @@ type Import interface {
 	GoGetImportPath() string // the import path used by "go get" command
 	GoModImportPath() string // the import path used by "go mod edit" command
 	IsClassic() bool         // an import is "classic" if it has no : character separator, hence no relative import path
+	CanonicalAlias() string  // canonical alias is the alias used in the flogo.json
 }
 
 type Imports []Import
@@ -86,6 +92,14 @@ func (flogoImport *FlogoImport) CanonicalImport() string {
 	}
 
 	return alias + flogoImport.modulePath + version + relativeImportPath
+}
+
+func (flogoImport *FlogoImport) CanonicalAlias() string {
+	if flogoImport.alias != "" {
+		return flogoImport.alias
+	} else {
+		return path.Base(flogoImport.GoImportPath())
+	}
 }
 
 func (flogoImport *FlogoImport) GoImportPath() string {
@@ -149,5 +163,6 @@ func ParseImport(flogoImport string) (Import, error) {
 	matches := flogoImportPattern.FindStringSubmatch(flogoImport)
 
 	result := &FlogoImport{modulePath: matches[3], relativeImportPath: matches[5], version: matches[4], alias: matches[2]}
+
 	return result, nil
 }

@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/msoap/byline"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -14,6 +13,8 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"github.com/msoap/byline"
 )
 
 type DepManager interface {
@@ -22,6 +23,7 @@ type DepManager interface {
 	GetPath(flogoImport Import) (string, error)
 	AddLocalContribForBuild() error
 	InstallLocalPkg(string, string)
+	GetAllImports() (map[string]Import, error)
 }
 
 func NewDepManager(sourceDir string) DepManager {
@@ -194,6 +196,33 @@ func (m *ModDepManager) RemoveImport(flogoImport Import) error {
 
 	return nil
 }
+func (m *ModDepManager) GetAllImports() (map[string]Import, error) {
+	file, err := ioutil.ReadFile(filepath.Join(m.srcDir, "go.mod"))
+	if err != nil {
+		return nil, err
+	}
+
+	content := string(file)
+
+	imports := strings.Split(content[strings.Index(content, "(")+1:strings.Index(content, ")")], "\n")
+	result := make(map[string]Import)
+
+	for _, pkg := range imports {
+		if pkg != " " && pkg != "" {
+
+			mods := strings.Split(strings.TrimSpace(pkg), " ")
+
+			modImport, err := ParseImport(strings.Join(mods[:2], "@"))
+			if err != nil {
+				return nil, err
+			}
+
+			result[modImport.GoImportPath()] = modImport
+		}
+	}
+
+	return result, nil
+}
 
 //This function converts capotal letters in package name
 // to !(smallercase). Eg C => !c . As this is the way
@@ -316,7 +345,10 @@ func getLatestVersion(path string) string {
 
 	var result Resp
 
-	json.Unmarshal(body, &result)
+	err = json.Unmarshal(body, &result)
+	if err != nil {
+		return ""
+	}
 
 	return result.Name
 

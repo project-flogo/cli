@@ -49,13 +49,17 @@ func ListContribs(project common.AppProject, jsonFormat bool, filter string) err
 		spec.Path = path
 
 		if desc.IsLegacy {
-			*spec.IsLegacy = true
+			spec.IsLegacy = true
 			spec.Descriptor = desc.GetContribType() + ".json"
 		} else {
 			spec.Descriptor = "descriptor.json"
 		}
 
 		specs = append(specs, spec)
+	}
+
+	if len(specs) == 0 {
+		return nil
 	}
 
 	if jsonFormat {
@@ -108,7 +112,7 @@ type ContribSpec struct {
 	Ref         string `json:"ref"`
 	Path        string `json:"path"`
 	Descriptor  string `json:"descriptor"`
-	IsLegacy    *bool  `json:"isLegacy,omitempty"`
+	IsLegacy    interface{} `json:"isLegacy,omitempty"`
 }
 
 

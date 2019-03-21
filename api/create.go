@@ -146,12 +146,20 @@ func setupAppDirectory(dm util.DepManager, appPath, coreVersion string) error {
 		return err
 	}
 
-	fmt.Println("installing core version ", coreVersion)
-
 	flogoCoreImport := util.NewFlogoImport(flogoCoreRepo, "", coreVersion, "")
 
+	//todo get the actual version installed from the go.mod file
+	if coreVersion == "" {
+		fmt.Printf("Installing: %s@latest\n", flogoCoreImport.CanonicalImport())
+	} else {
+		fmt.Printf("Installing: %s\n", flogoCoreImport.CanonicalImport())
+	}
+
 	// add & fetch the core library
-	dm.AddDependency(flogoCoreImport)
+	err = dm.AddDependency(flogoCoreImport)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

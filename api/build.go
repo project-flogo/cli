@@ -2,6 +2,9 @@ package api
 
 import (
 	"fmt"
+	"go/parser"
+	"go/printer"
+	"go/token"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -14,11 +17,6 @@ import (
 
 const (
 	fileEmbeddedAppGo string = "embeddedapp.go"
-	fileShimSupportGo string = "shim_support.go"
-	fileShimGo        string = "shim.go"
-	fileBuildGo       string = "build.go"
-	fileMakefile      string = "Makefile"
-	dirShim           string = "shim"
 )
 
 type BuildOptions struct {
@@ -27,15 +25,17 @@ type BuildOptions struct {
 	Shim            string
 }
 
-var fileSampleShimSupport = filepath.Join("examples", "engine", "shim", fileShimSupportGo)
 
 func BuildProject(project common.AppProject, options BuildOptions) error {
 
-	project.DepManager().AddLocalContribForBuild()
+	err := project.DepManager().AddLocalContribForBuild()
+	if err != nil {
+		return err
+	}
 
 	useShim := options.Shim != ""
 
-	err := createEmbeddedAppGoFile(project, options.EmbedConfig || useShim)
+	err = createEmbeddedAppGoFile(project, options.EmbedConfig || useShim)
 	if err != nil {
 		return err
 	}
@@ -51,6 +51,9 @@ func BuildProject(project common.AppProject, options BuildOptions) error {
 	}
 
 	if useShim {
+		if Verbose() {
+			fmt.Println("Preparing shim...")
+		}
 		buildExist, err := prepareShim(project, options.Shim)
 		if err != nil {
 			return err
@@ -58,9 +61,23 @@ func BuildProject(project common.AppProject, options BuildOptions) error {
 		if buildExist {
 			return nil
 		}
-
 	}
 
+	if options.OptimizeImports {
+		if Verbose() {
+			fmt.Println("Optimizing imports...")
+		}
+		err := optimizeImports(project)
+		defer restoreImports(project)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	if Verbose() {
+		fmt.Println("Performing 'go build'...")
+	}
 	err = util.ExecCmd(exec.Command("go", "build"), project.SrcDir())
 	if err != nil {
 		fmt.Println("Error in building", project.SrcDir())
@@ -78,158 +95,21 @@ func BuildProject(project common.AppProject, options BuildOptions) error {
 	exePath := filepath.Join(project.SrcDir(), exe)
 
 	if common.Verbose() {
-		fmt.Println("Path to exe is ", exePath)
+		fmt.Println("Path to executable is:", exePath)
 	}
+
 	if _, err := os.Stat(exePath); err == nil {
 		finalExePath := project.Executable()
-		os.MkdirAll(filepath.Dir(finalExePath), os.ModePerm)
+		err = os.MkdirAll(filepath.Dir(finalExePath), os.ModePerm)
+		if err != nil {
+			return err
+		}
 		err = os.Rename(exePath, project.Executable())
-
 		if err != nil {
 			return err
 		}
 	} else {
 		return fmt.Errorf("failed to build application, run with --verbose to see details")
-	}
-
-	return nil
-}
-
-func prepareShim(project common.AppProject, shim string) (bool, error) {
-
-	buf, err := ioutil.ReadFile(filepath.Join(project.Dir(), fileFlogoJson))
-	if err != nil {
-		return false, err
-	}
-
-	flogoJSON := string(buf)
-
-	descriptor, err := util.ParseAppDescriptor(flogoJSON)
-	if err != nil {
-		return false, err
-	}
-
-	err = registerImports(project, descriptor)
-	if err != nil {
-		return false, err
-	}
-
-	for _, trgCfg := range descriptor.Triggers {
-		if trgCfg.Id == shim {
-
-			ref := trgCfg.Ref
-
-			if trgCfg.Ref == "" {
-				found := false
-				ref, found = GetAliasRef("flogo:trigger", trgCfg.Type)
-				if !found {
-					return false, fmt.Errorf("unable to determine ref for trigger: %s", trgCfg.Id)
-				}
-			}
-
-			refImport, err := util.NewFlogoImportFromPath(ref)
-			if err != nil {
-				return false, err
-			}
-
-			path, err := project.GetPath(refImport)
-			if err != nil {
-				return false, err
-			}
-			var shimFilePath string
-
-			shimFilePath = filepath.Join(path, dirShim, fileShimGo)
-
-			if _, err := os.Stat(shimFilePath); err == nil {
-
-				copyFile(shimFilePath, filepath.Join(project.SrcDir(), fileShimGo))
-
-				// Check if this shim based trigger has a gobuild file. If the trigger has a gobuild
-				// execute that file, otherwise check if there is a Makefile to execute
-				goBuildFilePath := filepath.Join(path, dirShim, fileBuildGo)
-
-				makefilePath := filepath.Join(shimFilePath, dirShim, fileMakefile)
-
-				if _, err := os.Stat(goBuildFilePath); err == nil {
-					fmt.Println("This trigger makes use of a go build file...")
-
-					copyFile(goBuildFilePath, filepath.Join(project.SrcDir(), fileBuildGo))
-
-					// Execute go run gobuild.go
-					err = util.ExecCmd(exec.Command("go", "run", fileBuildGo), project.SrcDir())
-
-					if err != nil {
-						return false, err
-					}
-				} else if _, err := os.Stat(makefilePath); err == nil {
-					//look for Makefile and execute it
-					fmt.Println("Make File:", makefilePath)
-
-					copyFile(makefilePath, filepath.Join(project.SrcDir(), fileMakefile))
-
-					// Execute make
-					cmd := exec.Command("make", "-C", project.SrcDir())
-					cmd.Stdout = os.Stdout
-					cmd.Stderr = os.Stderr
-					cmd.Env = util.ReplaceEnvValue(os.Environ(), "GOPATH", project.Dir())
-
-					err = cmd.Run()
-					if err != nil {
-						return false, err
-					}
-				} else {
-					return false, nil
-				}
-			}
-
-			break
-		}
-	}
-
-	return true, nil
-}
-
-func createShimSupportGoFile(project common.AppProject, create bool) error {
-
-	shimSrcPath := filepath.Join(project.SrcDir(), fileShimSupportGo)
-
-	if !create {
-		if _, err := os.Stat(shimSrcPath); err == nil {
-			os.Remove(shimSrcPath)
-			if err != nil {
-				return err
-			}
-		}
-		//
-		//shimSrcPath := filepath.Join(project.SrcDir(), fileShimSupportGo)
-		//
-		//if _, err := os.Stat(shimSrcPath); err == nil {
-		//	os.Remove(shimSrcPath)
-		//	if err != nil {
-		//		return err
-		//	}
-		//}
-		return nil
-	}
-
-	flogoCoreImport, err := util.NewFlogoImportFromPath(flogoCoreRepo)
-	if err != nil {
-		return err
-	}
-
-	corePath, err := project.GetPath(flogoCoreImport)
-	if err != nil {
-		return err
-	}
-
-	bytes, err := ioutil.ReadFile(filepath.Join(corePath, fileSampleShimSupport))
-	if err != nil {
-		return err
-	}
-
-	err = ioutil.WriteFile(shimSrcPath, bytes, 0644)
-	if err != nil {
-		return err
 	}
 
 	return nil
@@ -241,12 +121,16 @@ func createEmbeddedAppGoFile(project common.AppProject, create bool) error {
 
 	if !create {
 		if _, err := os.Stat(embedSrcPath); err == nil {
-			os.Remove(embedSrcPath)
+			err = os.Remove(embedSrcPath)
 			if err != nil {
 				return err
 			}
 		}
 		return nil
+	}
+
+	if Verbose() {
+		fmt.Println("Embedding flogo.json in application...")
 	}
 
 	buf, err := ioutil.ReadFile(filepath.Join(project.Dir(), fileFlogoJson))
@@ -326,4 +210,70 @@ func initMain(project common.AppProject, backupMain bool) error {
 	}
 
 	return nil
+}
+
+
+func optimizeImports(project common.AppProject) error {
+
+	appImports, err := util.GetAppImports(filepath.Join(project.Dir(), fileFlogoJson), project.DepManager(), true)
+	if err != nil {
+		return err
+	}
+
+	var unused []util.Import
+	appImports.GetAllImports()
+	for _, impDetails := range appImports.GetAllImportDetails() {
+		if !impDetails.Used() {
+			unused = append(unused, impDetails.Imp)
+		}
+	}
+
+	importsFile := filepath.Join(project.SrcDir(), fileImportsGo)
+	importsFileOrig := filepath.Join(project.SrcDir(), fileImportsGo + ".orig")
+
+	err = util.CopyFile(importsFile, importsFileOrig)
+	if err != nil {
+		return err
+	}
+
+	fset := token.NewFileSet()
+	file, err := parser.ParseFile(fset, importsFile, nil, parser.ImportsOnly)
+	if err != nil {
+		return err
+	}
+
+	for _, i := range unused {
+		if Verbose() {
+			fmt.Printf("  Removing Import: %s\n", i.GoImportPath())
+		}
+		util.DeleteImport(fset, file, i.GoImportPath())
+	}
+
+	f, err := os.Create(importsFile)
+	defer f.Close()
+	if err := printer.Fprint(f, fset, file); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func restoreImports(project common.AppProject) {
+
+	importsFile := filepath.Join(project.SrcDir(), fileImportsGo)
+	importsFileOrig := filepath.Join(project.SrcDir(), fileImportsGo + ".orig")
+
+	if _, err := os.Stat(importsFileOrig); err == nil {
+		err = util.CopyFile(importsFileOrig, importsFile)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error restoring imports file '%s': %v\n", importsFile, err)
+			return
+		}
+
+		var err = os.Remove(importsFileOrig)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error removing backup imports file '%s': %v\n", importsFileOrig, err)
+			fmt.Fprintf(os.Stderr, "Manually remove backup imports file '%s'\n", importsFileOrig)
+		}
+	}
 }
