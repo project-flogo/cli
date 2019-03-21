@@ -28,7 +28,6 @@ The Flogo CLI is the primary tool to use when working with a Flogo application. 
 ### Prerequisites
 To get started with the Flogo CLI you'll need to have a few things
 * The Go programming language version 1.11 or later should be [installed](https://golang.org/doc/install).
-* The **GOPATH** environment variable on your system must be set properly
 * In order to simplify dependency management, we're using **go mod**. For more information on **go mod**, visit the [Go Modules Wiki](https://github.com/golang/go/wiki/Modules).
 
 ### Install the cli
