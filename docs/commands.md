@@ -194,7 +194,7 @@ $ flogo `your_command`
 <br>
 More information on Flogo CLI plugins can be found [here](plugins.md)
 
-## imports
+## update
 
 This command updates a contribution or dependency in the project.
 
