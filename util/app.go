@@ -59,6 +59,7 @@ func (ai *AppImports) addImports(imports []string) error {
 		if err != nil {
 			return err
 		}
+		details.TopLevel = true
 
 		ai.imports[flogoImport.GoImportPath()] = details
 	}
@@ -81,7 +82,7 @@ func (ai *AppImports) addReference(ref string, contribType string) error {
 
 			if importDetails.TopLevel {
 				// alias refs can only be to toplevel imports
-				if importDetails.Imp.Alias() == alias && importDetails.ContribDesc != nil &&
+				if importDetails.Imp.CanonicalAlias() == alias && importDetails.ContribDesc != nil &&
 					importDetails.ContribDesc.GetContribType() == contribType {
 					importDetails.HasAliasRef = true
 					found = true

@@ -11,12 +11,12 @@ import (
 
 var json bool
 var orphaned bool
-var filter string
+var listFilter string
 
 func init() {
 	listCmd.Flags().BoolVarP(&json, "json", "j", true, "print in json format")
 	listCmd.Flags().BoolVarP(&orphaned, "orphaned", "", false, "list orphaned refs")
-	listCmd.Flags().StringVarP(&listFilter, "filter", "f", "", "apply list filter [used, unused]")
+	listCmd.Flags().StringVarP(&listFilter, "filter", "", "", "apply list filter [used, unused]")
 	rootCmd.AddCommand(listCmd)
 }
 
@@ -36,7 +36,7 @@ var listCmd = &cobra.Command{
 			return
 		}
 
-		err := api.ListContribs(common.CurrentProject(), json, filter)
+		err := api.ListContribs(common.CurrentProject(), json, listFilter)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error getting list of contributions: %v\n", err)
 			os.Exit(1)

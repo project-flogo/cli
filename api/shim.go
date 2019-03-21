@@ -136,6 +136,7 @@ func createShimSupportGoFile(project common.AppProject, create bool) error {
 				return err
 			}
 		}
+
 		//
 		//shimSrcPath := filepath.Join(project.SrcDir(), fileShimSupportGo)
 		//
@@ -146,6 +147,10 @@ func createShimSupportGoFile(project common.AppProject, create bool) error {
 		//	}
 		//}
 		return nil
+	}
+
+	if Verbose() {
+		fmt.Println("Creating shim support files...")
 	}
 
 	flogoCoreImport, err := util.NewFlogoImportFromPath(flogoCoreRepo)

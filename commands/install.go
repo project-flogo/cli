@@ -10,11 +10,11 @@ import (
 )
 
 var localContrib string
-var listFilter string
+var contribBundleFile string
 
 func init() {
 	installCmd.Flags().StringVarP(&localContrib, "local", "l", "", "specify path to local contribution/dependency")
-	installCmd.Flags().StringVarP(&listFilter, "file", "f", "", "specify contribution bundle")
+	installCmd.Flags().StringVarP(&contribBundleFile, "file", "f", "", "specify contribution bundle")
 	rootCmd.AddCommand(installCmd)
 }
 
@@ -24,8 +24,8 @@ var installCmd = &cobra.Command{
 	Long:  "Installs a flogo contribution or dependency",
 	Run: func(cmd *cobra.Command, args []string) {
 
-		if listFilter != "" {
-			err := api.InstallContribBundle(common.CurrentProject(), listFilter)
+		if contribBundleFile != "" {
+			err := api.InstallContribBundle(common.CurrentProject(), contribBundleFile)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error installing contribution bundle: %v\n", err)
 				os.Exit(1)

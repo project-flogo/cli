@@ -137,7 +137,7 @@ Usage:
   flogo list [flags]
 
 Flags:
-  -f, --filter string   apply list filter [used, unused]
+      --filter string   apply list filter [used, unused]
   -j, --json            print in json format (default true)
       --orphaned        list orphaned refs
 ```  
