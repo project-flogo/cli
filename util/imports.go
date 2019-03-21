@@ -3,6 +3,7 @@ package util
 import (
 	"errors"
 	"fmt"
+	"path"
 	"regexp"
 )
 
@@ -55,6 +56,7 @@ type Import interface {
 	GoGetImportPath() string // the import path used by "go get" command
 	GoModImportPath() string // the import path used by "go mod edit" command
 	IsClassic() bool         // an import is "classic" if it has no : character separator, hence no relative import path
+	CanonicalAlias() string  // canonical alias is the alias used in the flogo.json
 }
 
 type Imports []Import
@@ -90,6 +92,14 @@ func (flogoImport *FlogoImport) CanonicalImport() string {
 	}
 
 	return alias + flogoImport.modulePath + version + relativeImportPath
+}
+
+func (flogoImport *FlogoImport) CanonicalAlias() string {
+	if flogoImport.alias != "" {
+		return flogoImport.alias
+	} else {
+		return path.Base(flogoImport.GoImportPath())
+	}
 }
 
 func (flogoImport *FlogoImport) GoImportPath() string {

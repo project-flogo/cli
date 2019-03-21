@@ -58,6 +58,10 @@ func ListContribs(project common.AppProject, jsonFormat bool, filter string) err
 		specs = append(specs, spec)
 	}
 
+	if len(specs) == 0 {
+		return nil
+	}
+
 	if jsonFormat {
 		resp, err := json.MarshalIndent(specs, "", "  ")
 		if err != nil {

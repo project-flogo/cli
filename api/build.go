@@ -2,6 +2,9 @@ package api
 
 import (
 	"fmt"
+	"go/parser"
+	"go/printer"
+	"go/token"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -48,6 +51,9 @@ func BuildProject(project common.AppProject, options BuildOptions) error {
 	}
 
 	if useShim {
+		if Verbose() {
+			fmt.Println("Preparing shim...")
+		}
 		buildExist, err := prepareShim(project, options.Shim)
 		if err != nil {
 			return err
@@ -55,9 +61,23 @@ func BuildProject(project common.AppProject, options BuildOptions) error {
 		if buildExist {
 			return nil
 		}
-
 	}
 
+	if options.OptimizeImports {
+		if Verbose() {
+			fmt.Println("Optimizing imports...")
+		}
+		err := optimizeImports(project)
+		defer restoreImports(project)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	if Verbose() {
+		fmt.Println("Performing 'go build'...")
+	}
 	err = util.ExecCmd(exec.Command("go", "build"), project.SrcDir())
 	if err != nil {
 		fmt.Println("Error in building", project.SrcDir())
@@ -75,8 +95,9 @@ func BuildProject(project common.AppProject, options BuildOptions) error {
 	exePath := filepath.Join(project.SrcDir(), exe)
 
 	if common.Verbose() {
-		fmt.Println("Path to exe is ", exePath)
+		fmt.Println("Path to executable is:", exePath)
 	}
+
 	if _, err := os.Stat(exePath); err == nil {
 		finalExePath := project.Executable()
 		err = os.MkdirAll(filepath.Dir(finalExePath), os.ModePerm)
@@ -106,6 +127,10 @@ func createEmbeddedAppGoFile(project common.AppProject, create bool) error {
 			}
 		}
 		return nil
+	}
+
+	if Verbose() {
+		fmt.Println("Embedding flogo.json in application...")
 	}
 
 	buf, err := ioutil.ReadFile(filepath.Join(project.Dir(), fileFlogoJson))
@@ -185,4 +210,70 @@ func initMain(project common.AppProject, backupMain bool) error {
 	}
 
 	return nil
+}
+
+
+func optimizeImports(project common.AppProject) error {
+
+	appImports, err := util.GetAppImports(filepath.Join(project.Dir(), fileFlogoJson), project.DepManager(), true)
+	if err != nil {
+		return err
+	}
+
+	var unused []util.Import
+	appImports.GetAllImports()
+	for _, impDetails := range appImports.GetAllImportDetails() {
+		if !impDetails.Used() {
+			unused = append(unused, impDetails.Imp)
+		}
+	}
+
+	importsFile := filepath.Join(project.SrcDir(), fileImportsGo)
+	importsFileOrig := filepath.Join(project.SrcDir(), fileImportsGo + ".orig")
+
+	err = util.CopyFile(importsFile, importsFileOrig)
+	if err != nil {
+		return err
+	}
+
+	fset := token.NewFileSet()
+	file, err := parser.ParseFile(fset, importsFile, nil, parser.ImportsOnly)
+	if err != nil {
+		return err
+	}
+
+	for _, i := range unused {
+		if Verbose() {
+			fmt.Printf("  Removing Import: %s\n", i.GoImportPath())
+		}
+		util.DeleteImport(fset, file, i.GoImportPath())
+	}
+
+	f, err := os.Create(importsFile)
+	defer f.Close()
+	if err := printer.Fprint(f, fset, file); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func restoreImports(project common.AppProject) {
+
+	importsFile := filepath.Join(project.SrcDir(), fileImportsGo)
+	importsFileOrig := filepath.Join(project.SrcDir(), fileImportsGo + ".orig")
+
+	if _, err := os.Stat(importsFileOrig); err == nil {
+		err = util.CopyFile(importsFileOrig, importsFile)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error restoring imports file '%s': %v\n", importsFile, err)
+			return
+		}
+
+		var err = os.Remove(importsFileOrig)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error removing backup imports file '%s': %v\n", importsFileOrig, err)
+			fmt.Fprintf(os.Stderr, "Manually remove backup imports file '%s'\n", importsFileOrig)
+		}
+	}
 }
