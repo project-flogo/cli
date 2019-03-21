@@ -152,7 +152,7 @@ $ flogo list
 List all contributions directly used by the application:
 
 ```bash
-$ flogo list -f used
+$ flogo list --filter used
 ```
 _**Note:** the results of this command are the only contributions that will be compiled into your application when using `flogo build` with the optimize flag_
 
