@@ -176,7 +176,6 @@ func createShimSupportGoFile(project common.AppProject, create bool) error {
 	return nil
 }
 
-
 func registerImports(project common.AppProject, appDesc *util.FlogoAppDescriptor) error {
 
 	for _, anImport := range appDesc.Imports {
