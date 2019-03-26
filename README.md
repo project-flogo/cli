@@ -150,17 +150,20 @@ $ curl http://localhost:9233/test
 
 _For more tutorials check out the [Labs](https://tibcosoftware.github.io/flogo/labs/) section in our documentation_
 
-## Documention
+## Documentation
 
-There is documentation also avaliable for [CLI Commands](docs/commands.md) and [CLI Plugins](docs/plugins.md).
+There is documentation also available for [CLI Commands](docs/commands.md) and [CLI Plugins](docs/plugins.md).
 
 ## Contributing
 Want to contribute to Project Flogo? We've made it easy, all you need to do is fork the repository you intend to contribute to, make your changes and create a Pull Request! Once the pull request has been created, you'll be prompted to sign the CLA (Contributor License Agreement) online.
 
-Not sure where to start? No problem, here are a few suggestions:
+Not sure where to start? No problem, you can browse the Project Flogo repos and look for issues tagged `kind/help-wanted` or `good first issue`. To make this even easier, we've added the links right here too!
+* Project Flogo: [kind/help-wanted](https://github.com/TIBCOSoftware/flogo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22) and [good first issue](https://github.com/TIBCOSoftware/flogo/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+* flogo cli: [kind/help-wanted](https://github.com/project-flogo/cli/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22) and [good first issue](https://github.com/project-flogo/cli/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+* flogo core: [kind/help-wanted](https://github.com/project-flogo/core/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22) and [good first issue](https://github.com/project-flogo/core/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+* flogo contrib: [kind/help-wanted](https://github.com/project-flogo/contrib/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22) and [good first issue](https://github.com/project-flogo/contrib/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
 
-* [contrib](https://github.com/project-flogo/contrib): This repository contains some basic contributions, such as activities, triggers, etc. Perhaps there is something missing? Create a new activity or trigger or fix a bug in an existing activity or trigger.
-* Browse all of the Project Flogo repositories and look for issues tagged `kind/help-wanted` or `good first issue`
+Another great way to contribute to Project Flogo is to check [flogo-contrib](https://github.com/project-flogo/contrib). That repository contains some basic contributions, such as activities, triggers, etc. Perhaps there is something missing? Create a new activity or trigger or fix a bug in an existing activity or trigger.
 
 If you have any questions, feel free to post an issue and tag it as a question, email flogo-oss@tibco.com or chat with the team and community:
 
