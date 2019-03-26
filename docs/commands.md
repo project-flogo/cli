@@ -33,7 +33,7 @@ _**Note:** the optimize flag removes unused trigger, acitons and activites from 
 
 
 ### Examples
-Build the working application
+Build the current project application
 
 ```bash
 $ flogo build
@@ -152,7 +152,7 @@ $ flogo list
 List all contributions directly used by the application:
 
 ```bash
-$ flogo list -f used
+$ flogo list --filter used
 ```
 _**Note:** the results of this command are the only contributions that will be compiled into your application when using `flogo build` with the optimize flag_
 
@@ -194,7 +194,7 @@ $ flogo `your_command`
 <br>
 More information on Flogo CLI plugins can be found [here](plugins.md)
 
-## imports
+## update
 
 This command updates a contribution or dependency in the project.
 
