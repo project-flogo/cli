@@ -3,10 +3,11 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/project-flogo/cli/common"
-	"github.com/project-flogo/cli/util"
 	"io/ioutil"
 	"os"
+
+	"github.com/project-flogo/cli/common"
+	"github.com/project-flogo/cli/util"
 )
 
 func InstallPackage(project common.AppProject, pkg string) error {
@@ -57,9 +58,9 @@ func InstallPackage(project common.AppProject, pkg string) error {
 	return nil
 }
 
-func InstallLocalPackage(project common.AppProject, localPath string, pkg string) error {
+func InstallLocalPackage(project common.AppProject, replacedPath string, pkg string) error {
 
-	project.DepManager().InstallLocalPkg(pkg, localPath)
+	project.DepManager().InstallLocalPkg(pkg, replacedPath)
 	return InstallPackage(project, pkg)
 }
 
