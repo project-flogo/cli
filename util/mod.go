@@ -281,10 +281,16 @@ func ExecCmd(cmd *exec.Cmd, workingDir string) error {
 
 func (m *ModDepManager) AddLocalContribForBuild() error {
 
+	err := ExecCmd(exec.Command("go", "mod", "download"), m.srcDir)
+	if err != nil {
+		return err
+	}
+
 	text, err := ioutil.ReadFile(filepath.Join(m.srcDir, "go.mod"))
 	if err != nil {
 		return err
 	}
+
 	data := string(text)
 
 	index := strings.Index(data, "replace")
@@ -300,6 +306,9 @@ func (m *ModDepManager) AddLocalContribForBuild() error {
 				if len(mods) < 5 {
 
 					m.localMods[mods[1]] = mods[3]
+				} else {
+
+					m.localMods[mods[1]] = filepath.Join(os.Getenv("GOPATH"), "pkg", "mod", mods[3]+"@"+mods[4])
 				}
 
 			}
