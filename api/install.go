@@ -60,7 +60,7 @@ func InstallPackage(project common.AppProject, pkg string) error {
 
 func InstallLocalPackage(project common.AppProject, replacedPath string, pkg string) error {
 
-	project.DepManager().InstallLocalPkg(pkg, replacedPath)
+	project.DepManager().InstallReplacedPkg(pkg, replacedPath)
 	return InstallPackage(project, pkg)
 }
 
