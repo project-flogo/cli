@@ -21,8 +21,8 @@ type DepManager interface {
 	Init() error
 	AddDependency(flogoImport Import) error
 	GetPath(flogoImport Import) (string, error)
-	AddLocalContribForBuild() error
-	InstallLocalPkg(string, string)
+	AddReplacedContribForBuild() error
+	InstallReplacedPkg(string, string)
 	GetAllImports() (map[string]Import, error)
 }
 
@@ -279,7 +279,7 @@ func ExecCmd(cmd *exec.Cmd, workingDir string) error {
 	return nil
 }
 
-func (m *ModDepManager) AddLocalContribForBuild() error {
+func (m *ModDepManager) AddReplacedContribForBuild() error {
 
 	err := ExecCmd(exec.Command("go", "mod", "download"), m.srcDir)
 	if err != nil {
@@ -319,7 +319,7 @@ func (m *ModDepManager) AddLocalContribForBuild() error {
 	return nil
 }
 
-func (m *ModDepManager) InstallLocalPkg(pkg1 string, pkg2 string) {
+func (m *ModDepManager) InstallReplacedPkg(pkg1 string, pkg2 string) {
 
 	m.localMods[pkg1] = pkg2
 
