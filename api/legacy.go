@@ -56,6 +56,10 @@ func CreateLegacyMetadata(path, contribType, contribPkg string) error {
 	mdFilePath := filepath.Join(path, contribType+".json")
 	pkg := filepath.Base(path)
 
+	if idx := strings.Index(pkg, "@"); idx > 0 {
+		pkg = pkg[:idx]
+	}
+
 	raw, err := ioutil.ReadFile(mdFilePath)
 	if err != nil {
 		return err
