@@ -25,10 +25,9 @@ type BuildOptions struct {
 	Shim            string
 }
 
-
 func BuildProject(project common.AppProject, options BuildOptions) error {
 
-	err := project.DepManager().AddLocalContribForBuild()
+	err := project.DepManager().AddReplacedContribForBuild()
 	if err != nil {
 		return err
 	}
@@ -212,7 +211,6 @@ func initMain(project common.AppProject, backupMain bool) error {
 	return nil
 }
 
-
 func optimizeImports(project common.AppProject) error {
 
 	appImports, err := util.GetAppImports(filepath.Join(project.Dir(), fileFlogoJson), project.DepManager(), true)
@@ -229,7 +227,7 @@ func optimizeImports(project common.AppProject) error {
 	}
 
 	importsFile := filepath.Join(project.SrcDir(), fileImportsGo)
-	importsFileOrig := filepath.Join(project.SrcDir(), fileImportsGo + ".orig")
+	importsFileOrig := filepath.Join(project.SrcDir(), fileImportsGo+".orig")
 
 	err = util.CopyFile(importsFile, importsFileOrig)
 	if err != nil {
@@ -261,7 +259,7 @@ func optimizeImports(project common.AppProject) error {
 func restoreImports(project common.AppProject) {
 
 	importsFile := filepath.Join(project.SrcDir(), fileImportsGo)
-	importsFileOrig := filepath.Join(project.SrcDir(), fileImportsGo + ".orig")
+	importsFileOrig := filepath.Join(project.SrcDir(), fileImportsGo+".orig")
 
 	if _, err := os.Stat(importsFileOrig); err == nil {
 		err = util.CopyFile(importsFileOrig, importsFile)
