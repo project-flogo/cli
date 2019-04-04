@@ -64,6 +64,7 @@ func prepareShim(project common.AppProject, shim string) (bool, error) {
 			if err != nil {
 				return false, err
 			}
+
 			var shimFilePath string
 
 			shimFilePath = filepath.Join(impPath, dirShim, fileShimGo)
