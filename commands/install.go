@@ -9,11 +9,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var localContrib string
+var replaceContrib string
 var contribBundleFile string
 
 func init() {
-	installCmd.Flags().StringVarP(&localContrib, "local", "l", "", "specify path to local contribution/dependency")
+	installCmd.Flags().StringVarP(&replaceContrib, "replace", "r", "", "specify a replaced path to local/replaced contribution/dependency")
 	installCmd.Flags().StringVarP(&contribBundleFile, "file", "f", "", "specify contribution bundle")
 	rootCmd.AddCommand(installCmd)
 }
@@ -32,8 +32,8 @@ var installCmd = &cobra.Command{
 			}
 		}
 
-		if localContrib != "" {
-			err := api.InstallLocalPackage(common.CurrentProject(), localContrib, args[0])
+		if replaceContrib != "" {
+			err := api.InstallLocalPackage(common.CurrentProject(), replaceContrib, args[0])
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error installing contribution/dependency: %v\n", err)
 				os.Exit(1)
