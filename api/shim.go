@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/project-flogo/cli/common"
@@ -22,6 +23,8 @@ const (
 )
 
 var fileSampleShimSupport = filepath.Join("examples", "engine", "shim", fileShimSupportGo)
+
+var flogoImportPattern = regexp.MustCompile(`^(([^ ]*)[ ]+)?([^@:]*)@?([^:]*)?:?(.*)?$`)
 
 func prepareShim(project common.AppProject, shim string) (bool, error) {
 
@@ -191,7 +194,9 @@ func registerImports(project common.AppProject, appDesc *util.FlogoAppDescriptor
 
 func registerImport(project common.AppProject, anImport string) error {
 
-	parts := strings.Split(anImport, " ")
+	matches := flogoImportPattern.FindStringSubmatch(anImport)
+
+	parts := strings.Split(matches[3], " ")
 
 	var alias string
 	var ref string
@@ -199,6 +204,7 @@ func registerImport(project common.AppProject, anImport string) error {
 	if numParts == 1 {
 		ref = parts[0]
 		alias = path.Base(ref)
+
 	} else if numParts == 2 {
 		alias = parts[0]
 		ref = parts[1]

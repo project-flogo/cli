@@ -58,10 +58,10 @@ func InstallPackage(project common.AppProject, pkg string) error {
 	return nil
 }
 
-func InstallLocalPackage(project common.AppProject, replacedPath string, pkg string) error {
+func InstallReplacedPackage(project common.AppProject, replacedPath string, pkg string) error {
 
 	project.DepManager().InstallReplacedPkg(pkg, replacedPath)
-	return InstallPackage(project, pkg)
+	return InstallPackage(project, pkg+"@v0.0.0")
 }
 
 func InstallContribBundle(project common.AppProject, path string) error {

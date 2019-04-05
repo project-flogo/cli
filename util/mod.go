@@ -22,7 +22,7 @@ type DepManager interface {
 	AddDependency(flogoImport Import) error
 	GetPath(flogoImport Import) (string, error)
 	AddReplacedContribForBuild() error
-	InstallReplacedPkg(string, string)
+	InstallReplacedPkg(string, string) error
 	GetAllImports() (map[string]Import, error)
 }
 
@@ -319,20 +319,25 @@ func (m *ModDepManager) AddReplacedContribForBuild() error {
 	return nil
 }
 
-func (m *ModDepManager) InstallReplacedPkg(pkg1 string, pkg2 string) {
+func (m *ModDepManager) InstallReplacedPkg(pkg1 string, pkg2 string) error {
 
 	m.localMods[pkg1] = pkg2
 
 	f, err := os.OpenFile(filepath.Join(m.srcDir, "go.mod"), os.O_APPEND|os.O_WRONLY, 0777)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	defer f.Close()
 
 	if _, err = f.WriteString(fmt.Sprintf("replace %v => %v", pkg1, pkg2)); err != nil {
-		panic(err)
+		return err
 	}
 
+	err = ExecCmd(exec.Command("go", "mod", "download"), m.srcDir)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 type Resp struct {
