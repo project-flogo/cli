@@ -14,7 +14,7 @@ var replaceContrib string
 var contribBundleFile string
 
 func init() {
-	installCmd.Flags().StringVarP(&replaceContrib, "replace", "r", "", "specify a replaced path to local/replaced contribution/dependency")
+	installCmd.Flags().StringVarP(&replaceContrib, "replace", "r", "", "specify path to replacement contribution/dependency")
 	installCmd.Flags().StringVarP(&contribBundleFile, "file", "f", "", "specify contribution bundle")
 	rootCmd.AddCommand(installCmd)
 }
