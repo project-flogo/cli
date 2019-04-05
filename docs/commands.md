@@ -113,7 +113,7 @@ Usage:
 
 Flags:
   -f, --file string      specify contribution bundle
-  -r, --replace string   specify a replaced path to local/replaced contribution/dependency
+  -r, --replace string   specify path to replacement contribution/dependency
 ```
       
 ### Examples
