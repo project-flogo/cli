@@ -3,6 +3,7 @@ package commands
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/project-flogo/cli/api"
 	"github.com/project-flogo/cli/common"
@@ -33,7 +34,8 @@ var installCmd = &cobra.Command{
 		}
 
 		if replaceContrib != "" {
-			err := api.InstallLocalPackage(common.CurrentProject(), replaceContrib, args[0])
+			replaceContrib = strings.Replace(replaceContrib, "@", " ", -1)
+			err := api.InstallReplacedPackage(common.CurrentProject(), replaceContrib, args[0])
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error installing contribution/dependency: %v\n", err)
 				os.Exit(1)
