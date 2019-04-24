@@ -16,6 +16,8 @@ import (
 
 const (
 	fileImportsGo = "imports.go"
+	add           = true
+	remove        = false
 )
 
 func init() {
@@ -60,7 +62,7 @@ var pluginInstallCmd = &cobra.Command{
 
 		fmt.Printf("Installing plugin: %s\n", pluginPkg)
 
-		added, err := addPlugin(pluginPkg)
+		added, err := updatePlugin(pluginPkg, add)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error adding plugin: %v\n", err)
 			os.Exit(1)
@@ -100,7 +102,7 @@ var pluginRemoveCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		pluginPkg := args[0]
-		removed, err := removePlugin(pluginPkg)
+		removed, err := updatePlugin(pluginPkg, remove)
 
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error adding plugin: %v\n", err)
@@ -207,9 +209,9 @@ func restoreGoMod() {
 	}
 }
 
-func addPlugin(pluginPkg string) (bool, error) {
+func updatePlugin(pluginPkg string, opt bool) (bool, error) {
 
-	added, err := modifyPluginImports(pluginPkg, false)
+	added, err := modifyPluginImports(pluginPkg, opt)
 	if err != nil {
 		return added, err
 	}
@@ -224,25 +226,6 @@ func addPlugin(pluginPkg string) (bool, error) {
 	}
 
 	return added, nil
-}
-
-func removePlugin(pluginPkg string) (bool, error) {
-
-	remove, err := modifyPluginImports(pluginPkg, true)
-	if err != nil {
-		return remove, err
-	}
-
-	if remove {
-		//Download all the modules. This is just to ensure all packages are downloaded before go build.
-		err := util.ExecCmd(exec.Command("go", "mod", "download"), cliCmdPath)
-		if err != nil {
-			return false, err
-		}
-	}
-
-	return remove, nil
-
 }
 
 func updateCLI() error {
