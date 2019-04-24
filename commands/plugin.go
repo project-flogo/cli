@@ -16,8 +16,8 @@ import (
 
 const (
 	fileImportsGo = "imports.go"
-	add           = true
-	remove        = false
+	add           = false
+	remove        = true
 )
 
 func init() {
