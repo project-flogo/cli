@@ -22,6 +22,7 @@ func init() {
 	pluginCmd.AddCommand(pluginInstallCmd)
 	pluginCmd.AddCommand(pluginListCmd)
 	pluginCmd.AddCommand(pluginUpdateCmd)
+	pluginCmd.AddCommand(pluginRemoveCmd)
 	rootCmd.AddCommand(pluginCmd)
 }
 
@@ -89,6 +90,33 @@ var pluginListCmd = &cobra.Command{
 		for _, cmd := range common.GetPlugins() {
 			fmt.Println(cmd.Name())
 		}
+	},
+}
+
+var pluginRemoveCmd = &cobra.Command{
+	Use:   "remove",
+	Short: "remove installed plugins",
+	Long:  "Remove installed CLI plugins",
+	Args:  cobra.ExactArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		pluginPkg := args[0]
+		removed, err := removePlugin(pluginPkg)
+
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error adding plugin: %v\n", err)
+			os.Exit(1)
+		}
+
+		if removed {
+			err = updateCLI()
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error updating CLI: %v\n", err)
+				//remove plugin import on failure
+				os.Exit(1)
+			}
+			fmt.Printf("Removed plugin %v \n", pluginPkg)
+		}
+
 	},
 }
 
@@ -196,6 +224,25 @@ func addPlugin(pluginPkg string) (bool, error) {
 	}
 
 	return added, nil
+}
+
+func removePlugin(pluginPkg string) (bool, error) {
+
+	remove, err := modifyPluginImports(pluginPkg, true)
+	if err != nil {
+		return remove, err
+	}
+
+	if remove {
+		//Download all the modules. This is just to ensure all packages are downloaded before go build.
+		err := util.ExecCmd(exec.Command("go", "mod", "download"), cliCmdPath)
+		if err != nil {
+			return false, err
+		}
+	}
+
+	return remove, nil
+
 }
 
 func updateCLI() error {
