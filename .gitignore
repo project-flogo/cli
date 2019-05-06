@@ -1,6 +1,7 @@
 
 ## OS X Resources
 .DS_Store
+.vscode/
 
 # Binaries
 *.exe

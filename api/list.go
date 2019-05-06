@@ -13,7 +13,6 @@ import (
 
 type ListFilter int
 
-
 func ListContribs(project common.AppProject, jsonFormat bool, filter string) error {
 
 	ai, err := util.GetAppImports(filepath.Join(project.Dir(), fileFlogoJson), project.DepManager(), true)
@@ -90,31 +89,30 @@ func ListContribs(project common.AppProject, jsonFormat bool, filter string) err
 
 func includeContrib(details *util.AppImportDetails, filter string) bool {
 
-	if !details.IsContrib() {
+	if !details.IsCoreContrib() {
 		return false
 	}
 
 	switch strings.ToLower(filter) {
 	case "used":
-		return details.Used()
+		return details.Referenced()
 	case "unused":
-		return !details.Used()
+		return !details.Referenced()
 	default:
 		return true
 	}
 }
 
 type ContribSpec struct {
-	Name        string `json:"name"`
-	Type        string `json:"type"`
-	Description string `json:"description"`
-	Homepage    string `json:"homepage"`
-	Ref         string `json:"ref"`
-	Path        string `json:"path"`
-	Descriptor  string `json:"descriptor"`
+	Name        string      `json:"name"`
+	Type        string      `json:"type"`
+	Description string      `json:"description"`
+	Homepage    string      `json:"homepage"`
+	Ref         string      `json:"ref"`
+	Path        string      `json:"path"`
+	Descriptor  string      `json:"descriptor"`
 	IsLegacy    interface{} `json:"isLegacy,omitempty"`
 }
-
 
 func ListOrphanedRefs(project common.AppProject, jsonFormat bool) error {
 
