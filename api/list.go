@@ -90,17 +90,18 @@ func ListContribs(project common.AppProject, jsonFormat bool, filter string) err
 func includeContrib(details *util.AppImportDetails, filter string) bool {
 
 	if details.IsCoreContrib() {
-		return true
-	}
 
-	switch strings.ToLower(filter) {
-	case "used":
-		return details.Referenced()
-	case "unused":
-		return !details.Referenced()
-	default:
-		return true
+		switch strings.ToLower(filter) {
+		case "used":
+			return details.Referenced()
+		case "unused":
+			return !details.Referenced()
+		default:
+			return true
+		}
 	}
+	return false
+
 }
 
 type ContribSpec struct {

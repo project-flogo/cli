@@ -39,9 +39,8 @@ func (d *AppImportDetails) IsCoreContrib() bool {
 	ct := d.ContribDesc.GetContribType()
 
 	switch ct {
-	case "flogo:action", "flogo:trigger", "flogo:activity":
+	case "action", "trigger", "activity":
 		return true
-
 	default:
 		return false
 	}
