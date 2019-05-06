@@ -27,12 +27,23 @@ type AppImportDetails struct {
 	HasDirectRef bool // a direct reference exists for this import
 }
 
-func (d *AppImportDetails) Used() bool {
+func (d *AppImportDetails) Referenced() bool {
 	return d.HasAliasRef || d.HasDirectRef
 }
 
-func (d *AppImportDetails) IsContrib() bool {
-	return d.ContribDesc != nil
+func (d *AppImportDetails) IsCoreContrib() bool {
+
+	if d.ContribDesc == nil {
+		return false
+	}
+	ct := d.ContribDesc.GetContribType()
+
+	switch ct {
+	case "action", "trigger", "activity":
+		return true
+	default:
+		return false
+	}
 }
 
 type AppImports struct {

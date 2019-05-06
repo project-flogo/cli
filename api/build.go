@@ -221,7 +221,7 @@ func optimizeImports(project common.AppProject) error {
 	var unused []util.Import
 	appImports.GetAllImports()
 	for _, impDetails := range appImports.GetAllImportDetails() {
-		if !impDetails.Used() {
+		if !impDetails.Referenced() && impDetails.IsCoreContrib() {
 			unused = append(unused, impDetails.Imp)
 		}
 	}
