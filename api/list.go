@@ -90,7 +90,7 @@ func ListContribs(project common.AppProject, jsonFormat bool, filter string) err
 func includeContrib(details *util.AppImportDetails, filter string) bool {
 
 	if details.IsCoreContrib() {
-		return false
+		return true
 	}
 
 	switch strings.ToLower(filter) {
