@@ -3,10 +3,11 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/project-flogo/cli/common"
-	"github.com/project-flogo/cli/util"
 	"io/ioutil"
 	"os"
+
+	"github.com/project-flogo/cli/common"
+	"github.com/project-flogo/cli/util"
 )
 
 func InstallPackage(project common.AppProject, pkg string) error {
@@ -57,10 +58,13 @@ func InstallPackage(project common.AppProject, pkg string) error {
 	return nil
 }
 
-func InstallLocalPackage(project common.AppProject, localPath string, pkg string) error {
+func InstallReplacedPackage(project common.AppProject, replacedPath string, pkg string) error {
 
-	project.DepManager().InstallLocalPkg(pkg, localPath)
-	return InstallPackage(project, pkg)
+	err := project.DepManager().InstallReplacedPkg(pkg, replacedPath)
+	if err != nil {
+		return err
+	}
+	return InstallPackage(project, pkg+"@v0.0.0")
 }
 
 func InstallContribBundle(project common.AppProject, path string) error {

@@ -112,8 +112,8 @@ Usage:
   flogo install [flags] <contribution|dependency>
 
 Flags:
-  -f, --file string    specify contribution bundle
-  -l, --local string   specify path to local contribution/dependency
+  -f, --file string      specify contribution bundle
+  -r, --replace string   specify path to replacement contribution/dependency
 ```
       
 ### Examples
@@ -125,7 +125,13 @@ $ flogo install github.com/project-flogo/contrib/trigger/rest
 Install a contribution that you are currently developing on your computer:
 
 ```bash
-$ flogo install -l /tmp/dev/myactivity github.com/myuser/myactivity
+$ flogo install -r /tmp/dev/myactivity github.com/myuser/myactivity
+```
+
+Install a contribution that is being developed by different person on their fork:
+
+```bash
+$ flogo install -r github.com/otherusr/myactivity@master github.com/myuser/myactivity
 ```
 
 ## list

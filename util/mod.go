@@ -21,8 +21,8 @@ type DepManager interface {
 	Init() error
 	AddDependency(flogoImport Import) error
 	GetPath(flogoImport Import) (string, error)
-	AddLocalContribForBuild() error
-	InstallLocalPkg(string, string)
+	AddReplacedContribForBuild() error
+	InstallReplacedPkg(string, string) error
 	GetAllImports() (map[string]Import, error)
 }
 
@@ -279,12 +279,18 @@ func ExecCmd(cmd *exec.Cmd, workingDir string) error {
 	return nil
 }
 
-func (m *ModDepManager) AddLocalContribForBuild() error {
+func (m *ModDepManager) AddReplacedContribForBuild() error {
+
+	err := ExecCmd(exec.Command("go", "mod", "download"), m.srcDir)
+	if err != nil {
+		return err
+	}
 
 	text, err := ioutil.ReadFile(filepath.Join(m.srcDir, "go.mod"))
 	if err != nil {
 		return err
 	}
+
 	data := string(text)
 
 	index := strings.Index(data, "replace")
@@ -300,6 +306,9 @@ func (m *ModDepManager) AddLocalContribForBuild() error {
 				if len(mods) < 5 {
 
 					m.localMods[mods[1]] = mods[3]
+				} else {
+
+					m.localMods[mods[1]] = filepath.Join(os.Getenv("GOPATH"), "pkg", "mod", mods[3]+"@"+mods[4])
 				}
 
 			}
@@ -310,20 +319,25 @@ func (m *ModDepManager) AddLocalContribForBuild() error {
 	return nil
 }
 
-func (m *ModDepManager) InstallLocalPkg(pkg1 string, pkg2 string) {
+func (m *ModDepManager) InstallReplacedPkg(pkg1 string, pkg2 string) error {
 
 	m.localMods[pkg1] = pkg2
 
 	f, err := os.OpenFile(filepath.Join(m.srcDir, "go.mod"), os.O_APPEND|os.O_WRONLY, 0777)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	defer f.Close()
 
 	if _, err = f.WriteString(fmt.Sprintf("replace %v => %v", pkg1, pkg2)); err != nil {
-		panic(err)
+		return err
 	}
 
+	err = ExecCmd(exec.Command("go", "mod", "download"), m.srcDir)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 type Resp struct {

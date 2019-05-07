@@ -27,7 +27,7 @@ type BuildOptions struct {
 
 func BuildProject(project common.AppProject, options BuildOptions) error {
 
-	err := project.DepManager().AddLocalContribForBuild()
+	err := project.DepManager().AddReplacedContribForBuild()
 	if err != nil {
 		return err
 	}
