@@ -28,7 +28,7 @@ func ListContribs(project common.AppProject, jsonFormat bool, filter string) err
 			continue
 		}
 
-		addContribToList(project, details, specs)
+		specs = append(specs, getContribSpec(project, details))
 
 	}
 
@@ -39,7 +39,7 @@ func ListContribs(project common.AppProject, jsonFormat bool, filter string) err
 		}
 
 		if details.ContribDesc.Type == "flogo:function" {
-			addContribToList(project, details, specs)
+			specs = append(specs, getContribSpec(project, details))
 		}
 	}
 
@@ -102,10 +102,10 @@ type ContribSpec struct {
 	IsLegacy    interface{} `json:"isLegacy,omitempty"`
 }
 
-func addContribToList(project common.AppProject, details *util.AppImportDetails, specs []*ContribSpec) {
+func getContribSpec(project common.AppProject, details *util.AppImportDetails) *ContribSpec {
 	path, err := project.GetPath(details.Imp)
 	if err != nil {
-		return
+		return nil
 	}
 
 	if Verbose() {
@@ -129,7 +129,7 @@ func addContribToList(project common.AppProject, details *util.AppImportDetails,
 		spec.Descriptor = "descriptor.json"
 	}
 
-	specs = append(specs, spec)
+	return spec
 }
 func ListOrphanedRefs(project common.AppProject, jsonFormat bool) error {
 
