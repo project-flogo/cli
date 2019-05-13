@@ -204,7 +204,11 @@ func importDependencies(project common.AppProject) error {
 			return err
 		}
 
-		desc := details.ContribDesc
+		desc, err := util.GetContribDescriptor(path)
+
+		if err != nil {
+			return err
+		}
 
 		if desc != nil {
 

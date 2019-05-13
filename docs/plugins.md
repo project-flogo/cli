@@ -1,3 +1,9 @@
+---
+title: plugins
+weight: 5020
+pre: "<i class=\"fa fa-terminal\" aria-hidden=\"true\"></i> "
+---
+
 # Plugins
 
 The Flogo CLI has support for plugins.  These plugins can be used to extend the Flogo CLI command.

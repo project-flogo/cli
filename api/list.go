@@ -28,33 +28,19 @@ func ListContribs(project common.AppProject, jsonFormat bool, filter string) err
 			continue
 		}
 
-		path, err := project.GetPath(details.Imp)
-		if err != nil {
-			return err
+		specs = append(specs, getContribSpec(project, details))
+
+	}
+
+	for _, details := range ai.GetAllImportDetails() {
+
+		if details.ContribDesc == nil {
+			continue
 		}
 
-		if Verbose() {
-			fmt.Println("Path of contrib", path, "for contrib", details.Imp)
+		if details.ContribDesc.Type == "flogo:function" {
+			specs = append(specs, getContribSpec(project, details))
 		}
-
-		desc := details.ContribDesc
-
-		spec := &ContribSpec{}
-		spec.Name = desc.Name
-		spec.Type = desc.Type
-		spec.Description = desc.Description
-		spec.Homepage = desc.Homepage
-		spec.Ref = details.Imp.ModulePath()
-		spec.Path = path
-
-		if desc.IsLegacy {
-			spec.IsLegacy = true
-			spec.Descriptor = desc.GetContribType() + ".json"
-		} else {
-			spec.Descriptor = "descriptor.json"
-		}
-
-		specs = append(specs, spec)
 	}
 
 	if len(specs) == 0 {
@@ -100,6 +86,7 @@ func includeContrib(details *util.AppImportDetails, filter string) bool {
 			return true
 		}
 	}
+
 	return false
 
 }
@@ -115,6 +102,35 @@ type ContribSpec struct {
 	IsLegacy    interface{} `json:"isLegacy,omitempty"`
 }
 
+func getContribSpec(project common.AppProject, details *util.AppImportDetails) *ContribSpec {
+	path, err := project.GetPath(details.Imp)
+	if err != nil {
+		return nil
+	}
+
+	if Verbose() {
+		fmt.Println("Path of contrib", path, "for contrib", details.Imp)
+	}
+
+	desc := details.ContribDesc
+
+	spec := &ContribSpec{}
+	spec.Name = desc.Name
+	spec.Type = desc.Type
+	spec.Description = desc.Description
+	spec.Homepage = desc.Homepage
+	spec.Ref = details.Imp.ModulePath()
+	spec.Path = path
+
+	if desc.IsLegacy {
+		spec.IsLegacy = true
+		spec.Descriptor = desc.GetContribType() + ".json"
+	} else {
+		spec.Descriptor = "descriptor.json"
+	}
+
+	return spec
+}
 func ListOrphanedRefs(project common.AppProject, jsonFormat bool) error {
 
 	ai, err := util.GetAppImports(filepath.Join(project.Dir(), fileFlogoJson), project.DepManager(), true)
