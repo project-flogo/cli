@@ -1,8 +1,8 @@
----
+<!--
 title: flogo
 weight: 5020
 pre: "<i class=\"fa fa-terminal\" aria-hidden=\"true\"></i> "
----
+-->
 
 # Commands
 
