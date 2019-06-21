@@ -221,11 +221,11 @@ func registerImport(project common.AppProject, anImport string) error {
 		return err
 	}
 
-	if ct == "" {
-		return fmt.Errorf("unable to determine contribution type for import: %s", anImport)
+	if ct != "" {
+		RegisterAlias(ct, alias, ref)
+
 	}
 
-	RegisterAlias(ct, alias, ref)
 	return nil
 }
 
