@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"errors"
 	"fmt"
 	"go/parser"
 	"go/printer"
@@ -70,10 +71,13 @@ var pluginInstallCmd = &cobra.Command{
 
 		if added {
 			err = updateCLI()
+
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error updating CLI: %v\n", err)
 				//remove plugin import on failure
+
 				modifyPluginImports(pluginPkg, true)
+
 				os.Exit(1)
 			}
 
@@ -211,6 +215,11 @@ func restoreGoMod() {
 
 func updatePlugin(pluginPkg string, opt bool) (bool, error) {
 
+	err := util.ExecCmd(exec.Command("go", "get", pluginPkg), cliCmdPath)
+	if err != nil {
+		return false, err
+	}
+
 	added, err := modifyPluginImports(pluginPkg, opt)
 	if err != nil {
 		return added, err
@@ -268,14 +277,16 @@ func modifyPluginImports(pkg string, remove bool) (bool, error) {
 	importsFile := filepath.Join(cliCmdPath, fileImportsGo)
 
 	fset := token.NewFileSet()
-	file, err := parser.ParseFile(fset, importsFile, nil, parser.ImportsOnly)
-	if err != nil {
-		return false, err
+	file, _ := parser.ParseFile(fset, importsFile, nil, parser.ImportsOnly)
+
+	if file.Imports == nil {
+		return false, errors.New("No Imports found.")
 	}
 
 	successful := false
 
 	if remove {
+
 		successful = util.DeleteImport(fset, file, pkg)
 	} else {
 		successful = util.AddImport(fset, file, pkg)
