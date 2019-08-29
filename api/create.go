@@ -20,10 +20,6 @@ func CreateProject(basePath, appName, appCfgPath, coreVersion string) (common.Ap
 	var err error
 	var appJson string
 
-	if Scaffold() {
-		fileSampleFlogoJson = filepath.Join("alt", "examples", "engine", "flogo.json")
-	}
-
 	if appCfgPath != "" {
 
 		if util.IsRemote(appCfgPath) {
@@ -288,6 +284,10 @@ func getAndUpdateAppJson(dm util.DepManager, appName, appJson string) (string, e
 		appJson = string(bytes)
 	}
 
+	if !Scaffold() {
+		appJson = emptyFlogoJson
+	}
+
 	descriptor, err := util.ParseAppDescriptor(appJson)
 	if err != nil {
 		return "", err
@@ -348,3 +348,17 @@ func GetTempDir() (string, error) {
 	}
 	return tempDir, nil
 }
+
+var emptyFlogoJson = `
+{
+	"name": "{{.AppName}}",
+	"type": "flogo:app",
+	"version": "0.0.1",
+	"description": "My flogo application description",
+	"appModel": "1.1.0",
+	"imports": [],
+	"resources":[],
+	"triggers": []
+	
+  }
+  `
