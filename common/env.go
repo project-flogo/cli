@@ -5,6 +5,7 @@ import (
 )
 
 var verbose = false
+var scaffold = false
 var appProject AppProject
 
 func SetVerbose(enable bool) {
