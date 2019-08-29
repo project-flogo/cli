@@ -16,8 +16,8 @@ func SetVerbose(enable bool) {
 	util.SetVerbose(enable)
 }
 
-func SetScaffold(scaffold bool) {
-	scaffold = scaffold
+func SetScaffold(val bool) {
+	scaffold = val
 }
 
 func Verbose() bool {
