@@ -15,7 +15,7 @@ var scaffold bool
 func init() {
 	CreateCmd.Flags().StringVarP(&flogoJsonPath, "file", "f", "", "specify a flogo.json to create project from")
 	CreateCmd.Flags().StringVarP(&coreVersion, "cv", "", "", "specify core library version (ex. master)")
-	CreateCmd.Flags().BoolVar(&scaffold, "scaffold", "s", "", "scaffold")
+	CreateCmd.Flags().BoolVar(&scaffold, "scaffold", false, "Scaffold")
 	rootCmd.AddCommand(CreateCmd)
 }
 

@@ -12,7 +12,7 @@ import (
 	"github.com/project-flogo/cli/util"
 )
 
-var fileSampleFlogoJson string
+var fileSampleFlogoJson = filepath.Join("examples", "engine", "flogo.json")
 var fileSampleEngineMain = filepath.Join("examples", "engine", "main.go")
 
 func CreateProject(basePath, appName, appCfgPath, coreVersion string) (common.AppProject, error) {
@@ -22,8 +22,6 @@ func CreateProject(basePath, appName, appCfgPath, coreVersion string) (common.Ap
 
 	if Scaffold() {
 		fileSampleFlogoJson = filepath.Join("alt", "examples", "engine", "flogo.json")
-	} else {
-		fileSampleFlogoJson = filepath.Join("examples", "engine", "flogo.json")
 	}
 
 	if appCfgPath != "" {
@@ -282,7 +280,7 @@ func getAndUpdateAppJson(dm util.DepManager, appName, appJson string) (string, e
 			return "", err
 		}
 
-		bytes, err := ioutil.ReadFile(filepath.Join(fileSampleFlogoJson))
+		bytes, err := ioutil.ReadFile(filepath.Join(corePath, fileSampleFlogoJson))
 		if err != nil {
 			return "", err
 		}
