@@ -10,12 +10,10 @@ import (
 
 var flogoJsonPath string
 var coreVersion string
-var scaffold bool
 
 func init() {
 	CreateCmd.Flags().StringVarP(&flogoJsonPath, "file", "f", "", "specify a flogo.json to create project from")
 	CreateCmd.Flags().StringVarP(&coreVersion, "cv", "", "", "specify core library version (ex. master)")
-	CreateCmd.Flags().BoolVar(&scaffold, "scaffold", false, "Scaffold")
 	rootCmd.AddCommand(CreateCmd)
 }
 
@@ -28,7 +26,6 @@ var CreateCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 
 		api.SetVerbose(verbose)
-		api.SetScaffold(scaffold)
 		appName := ""
 		if len(args) > 0 {
 			appName = args[0]
