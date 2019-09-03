@@ -263,6 +263,27 @@ func createMain(dm util.DepManager, appDir string) error {
 
 func getAndUpdateAppJson(dm util.DepManager, appName, appJson string) (string, error) {
 
+	if len(appJson) == 0 {
+
+		// appJson wasn't provided, so lets grab the example
+		flogoCoreImport, err := util.NewFlogoImportFromPath(flogoCoreRepo)
+		if err != nil {
+			return "", err
+		}
+
+		corePath, err := dm.GetPath(flogoCoreImport)
+		if err != nil {
+			return "", err
+		}
+
+		bytes, err := ioutil.ReadFile(filepath.Join(corePath, fileSampleFlogoJson))
+		if err != nil {
+			return "", err
+		}
+
+		appJson = string(bytes)
+	}
+
 	descriptor, err := util.ParseAppDescriptor(appJson)
 	if err != nil {
 		return "", err
