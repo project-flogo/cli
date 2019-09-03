@@ -36,7 +36,9 @@ var CreateCmd = &cobra.Command{
 			fmt.Fprintf(os.Stderr, "Error determining working directory: %v\n", err)
 			os.Exit(1)
 		}
-
+		if flogoJsonPath == "" {
+			flogoJsonPath = emptyFlogoJson
+		}
 		_, err = api.CreateProject(currentDir, appName, flogoJsonPath, coreVersion)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error creating project: %v\n", err)
@@ -44,3 +46,16 @@ var CreateCmd = &cobra.Command{
 		}
 	},
 }
+var emptyFlogoJson = `
+{
+	"name": "{{.AppName}}",
+	"type": "flogo:app",
+	"version": "0.0.1",
+	"description": "My flogo application description",
+	"appModel": "1.1.0",
+	"imports": [],
+	"resources":[],
+	"triggers": []
+	
+  }
+  `

@@ -263,8 +263,6 @@ func createMain(dm util.DepManager, appDir string) error {
 
 func getAndUpdateAppJson(dm util.DepManager, appName, appJson string) (string, error) {
 
-	appJson = emptyFlogoJson
-
 	descriptor, err := util.ParseAppDescriptor(appJson)
 	if err != nil {
 		return "", err
@@ -325,17 +323,3 @@ func GetTempDir() (string, error) {
 	}
 	return tempDir, nil
 }
-
-var emptyFlogoJson = `
-{
-	"name": "{{.AppName}}",
-	"type": "flogo:app",
-	"version": "0.0.1",
-	"description": "My flogo application description",
-	"appModel": "1.1.0",
-	"imports": [],
-	"resources":[],
-	"triggers": []
-	
-  }
-  `
