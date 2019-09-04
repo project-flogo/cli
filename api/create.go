@@ -12,7 +12,6 @@ import (
 	"github.com/project-flogo/cli/util"
 )
 
-var fileSampleFlogoJson = filepath.Join("examples", "engine", "flogo.json")
 var fileSampleEngineMain = filepath.Join("examples", "engine", "main.go")
 
 func CreateProject(basePath, appName, appCfgPath, coreVersion string) (common.AppProject, error) {
@@ -264,24 +263,7 @@ func createMain(dm util.DepManager, appDir string) error {
 func getAndUpdateAppJson(dm util.DepManager, appName, appJson string) (string, error) {
 
 	if len(appJson) == 0 {
-
-		// appJson wasn't provided, so lets grab the example
-		flogoCoreImport, err := util.NewFlogoImportFromPath(flogoCoreRepo)
-		if err != nil {
-			return "", err
-		}
-
-		corePath, err := dm.GetPath(flogoCoreImport)
-		if err != nil {
-			return "", err
-		}
-
-		bytes, err := ioutil.ReadFile(filepath.Join(corePath, fileSampleFlogoJson))
-		if err != nil {
-			return "", err
-		}
-
-		appJson = string(bytes)
+		appJson = emptyFlogoJson
 	}
 
 	descriptor, err := util.ParseAppDescriptor(appJson)
@@ -344,3 +326,17 @@ func GetTempDir() (string, error) {
 	}
 	return tempDir, nil
 }
+
+var emptyFlogoJson = `
+{
+	"name": "{{.AppName}}",
+	"type": "flogo:app",
+	"version": "0.0.1",
+	"description": "My flogo application description",
+	"appModel": "1.1.0",
+	"imports": [],
+	"resources":[],
+	"triggers": []
+	
+  }
+  `
