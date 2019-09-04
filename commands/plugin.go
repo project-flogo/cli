@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 
 	"github.com/project-flogo/cli/common"
 	"github.com/project-flogo/cli/util"
@@ -258,8 +259,12 @@ func updateCLI() error {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", osErr)
 		return err
 	}
+	cliExe := "flogo"
+	if runtime.GOOS == "windows" || os.Getenv("GOOS") == "windows" {
+		cliExe = cliExe + ".exe"
+	}
 
-	err = os.Rename(filepath.Join(cliCmdPath, "flogo"), exe)
+	err = os.Rename(filepath.Join(cliCmdPath, cliExe), exe)
 	if err != nil {
 		return err
 	}
