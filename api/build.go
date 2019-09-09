@@ -22,6 +22,7 @@ const (
 type BuildOptions struct {
 	OptimizeImports bool
 	EmbedConfig     bool
+	BackupMain      bool
 	Shim            string
 }
 
@@ -32,34 +33,23 @@ func BuildProject(project common.AppProject, options BuildOptions) error {
 		return err
 	}
 
-	useShim := options.Shim != ""
+	if len(buildPreProcessors) > 0 {
+		for _, processor := range buildPreProcessors {
+			err = processor.doPreProcessing(project,options)
+			if err != nil {
+				return err
+			}
+		}
+	}
 
-	err = createEmbeddedAppGoFile(project, options.EmbedConfig || useShim)
+	err = createEmbeddedAppGoFile(project, options.EmbedConfig)
 	if err != nil {
 		return err
 	}
 
-	err = createShimSupportGoFile(project, useShim)
+	err = initMain(project, options.BackupMain)
 	if err != nil {
 		return err
-	}
-
-	err = initMain(project, useShim)
-	if err != nil {
-		return err
-	}
-
-	if useShim {
-		if Verbose() {
-			fmt.Println("Preparing shim...")
-		}
-		buildExist, err := prepareShim(project, options.Shim)
-		if err != nil {
-			return err
-		}
-		if buildExist {
-			return nil
-		}
 	}
 
 	if options.OptimizeImports {
@@ -111,6 +101,15 @@ func BuildProject(project common.AppProject, options BuildOptions) error {
 		return fmt.Errorf("failed to build application, run with --verbose to see details")
 	}
 
+	if len(buildPostProcessors) > 0 {
+		for _, processor := range buildPostProcessors {
+			err = processor.doPostProcessing(project)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -150,7 +149,7 @@ func createEmbeddedAppGoFile(project common.AppProject, create bool) error {
 		return err
 	}
 	RenderTemplate(f, tplEmbeddedAppGoFile, &data)
-	f.Close()
+	_ = f.Close()
 
 	return nil
 }
@@ -167,20 +166,6 @@ func init () {
 }
 `
 
-func copyFile(srcFilePath, destFilePath string) error {
-
-	bytes, err := ioutil.ReadFile(srcFilePath)
-	if err != nil {
-		return err
-	}
-
-	err = ioutil.WriteFile(destFilePath, bytes, 0644)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
 
 func initMain(project common.AppProject, backupMain bool) error {
 
@@ -274,4 +259,25 @@ func restoreImports(project common.AppProject) {
 			fmt.Fprintf(os.Stderr, "Manually remove backup imports file '%s'\n", importsFileOrig)
 		}
 	}
+}
+
+//todo convert shim support to build pre/post processor
+
+type BuildPreProcessor interface {
+	doPreProcessing(project common.AppProject, options BuildOptions) error
+}
+
+type BuildPostProcessor interface {
+	doPostProcessing(project common.AppProject) error
+}
+
+var buildPreProcessors []BuildPreProcessor
+var buildPostProcessors []BuildPostProcessor
+
+func RegisterBuildPreProcessors(processor BuildPreProcessor) {
+	buildPreProcessors = append(buildPreProcessors, processor)
+}
+
+func RegisterBuildPostProcessor(processor BuildPostProcessor) {
+	buildPostProcessors = append(buildPostProcessors, processor)
 }
