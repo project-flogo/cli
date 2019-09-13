@@ -34,7 +34,7 @@ var buildCmd = &cobra.Command{
 
 		if flogoJsonFile == "" {
 			preRun(cmd, args, verbose)
-			options := api.BuildOptions{Shim: buildShim, OptimizeImports: buildOptimize, EmbedConfig: buildEmbed}
+			options := common.BuildOptions{Shim: buildShim, OptimizeImports: buildOptimize, EmbedConfig: buildEmbed}
 
 			err := api.BuildProject(common.CurrentProject(), options)
 			if err != nil {
@@ -60,7 +60,7 @@ var buildCmd = &cobra.Command{
 
 			common.SetCurrentProject(tempProject)
 
-			options := api.BuildOptions{Shim: buildShim, OptimizeImports: buildOptimize, EmbedConfig: buildEmbed}
+			options := common.BuildOptions{Shim: buildShim, OptimizeImports: buildOptimize, EmbedConfig: buildEmbed}
 
 			err = api.BuildProject(common.CurrentProject(), options)
 			if err != nil {

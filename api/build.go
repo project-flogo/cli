@@ -19,23 +19,18 @@ const (
 	fileEmbeddedAppGo string = "embeddedapp.go"
 )
 
-type BuildOptions struct {
-	OptimizeImports bool
-	EmbedConfig     bool
-	BackupMain      bool
-	Shim            string
-}
-
-func BuildProject(project common.AppProject, options BuildOptions) error {
+func BuildProject(project common.AppProject, options common.BuildOptions) error {
 
 	err := project.DepManager().AddReplacedContribForBuild()
 	if err != nil {
 		return err
 	}
 
+	buildPreProcessors := common.BuildPreProcessors()
+
 	if len(buildPreProcessors) > 0 {
 		for _, processor := range buildPreProcessors {
-			err = processor.doPreProcessing(project,options)
+			err = processor.DoPreProcessing(project,options)
 			if err != nil {
 				return err
 			}
@@ -101,9 +96,11 @@ func BuildProject(project common.AppProject, options BuildOptions) error {
 		return fmt.Errorf("failed to build application, run with --verbose to see details")
 	}
 
+	buildPostProcessors := common.BuildPostProcessors()
+
 	if len(buildPostProcessors) > 0 {
 		for _, processor := range buildPostProcessors {
-			err = processor.doPostProcessing(project)
+			err = processor.DoPostProcessing(project)
 			if err != nil {
 				return err
 			}
@@ -259,25 +256,4 @@ func restoreImports(project common.AppProject) {
 			fmt.Fprintf(os.Stderr, "Manually remove backup imports file '%s'\n", importsFileOrig)
 		}
 	}
-}
-
-//todo convert shim support to build pre/post processor
-
-type BuildPreProcessor interface {
-	doPreProcessing(project common.AppProject, options BuildOptions) error
-}
-
-type BuildPostProcessor interface {
-	doPostProcessing(project common.AppProject) error
-}
-
-var buildPreProcessors []BuildPreProcessor
-var buildPostProcessors []BuildPostProcessor
-
-func RegisterBuildPreProcessor(processor BuildPreProcessor) {
-	buildPreProcessors = append(buildPreProcessors, processor)
-}
-
-func RegisterBuildPostProcessor(processor BuildPostProcessor) {
-	buildPostProcessors = append(buildPostProcessors, processor)
 }
