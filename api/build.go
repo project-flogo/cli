@@ -274,7 +274,7 @@ type BuildPostProcessor interface {
 var buildPreProcessors []BuildPreProcessor
 var buildPostProcessors []BuildPostProcessor
 
-func RegisterBuildPreProcessors(processor BuildPreProcessor) {
+func RegisterBuildPreProcessor(processor BuildPreProcessor) {
 	buildPreProcessors = append(buildPreProcessors, processor)
 }
 
