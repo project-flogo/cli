@@ -301,7 +301,7 @@ func GetAliasRef(contribType string, alias string) (string, bool) {
 }
 
 func init() {
-	RegisterBuildPreProcessors(&ShimBuildPreProcessor{})
+	RegisterBuildPreProcessor(&ShimBuildPreProcessor{})
 }
 
 
