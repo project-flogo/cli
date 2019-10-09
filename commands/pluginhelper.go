@@ -106,6 +106,11 @@ func UpdateCLI(pluginPkg string, updateOption int) error {
 		cliExe = cliExe + ".exe"
 	}
 
+	err = util.Rename(exPath)
+	if err != nil {
+		return err
+	}
+
 	err = util.Copy(filepath.Join(cliCmdPath, cliExe), exPath, false)
 	if err != nil {
 		//fmt.Fprintf(os.Stderr, "Error: %v\n", osErr)
@@ -165,11 +170,11 @@ func createPluginListFile(basePath string, plugins map[string]struct{}) error {
 	defer f.Close()
 
 	err = pluginListTemplate.Execute(f, struct {
-		Timestamp time.Time
-		PluginList   map[string]struct{}
+		Timestamp  time.Time
+		PluginList map[string]struct{}
 	}{
-		Timestamp: time.Now(),
-		PluginList:   plugins,
+		Timestamp:  time.Now(),
+		PluginList: plugins,
 	})
 
 	return err
@@ -186,7 +191,6 @@ func init() {
 	{{end}}
 }
 `))
-
 
 ///////////
 // Version
