@@ -6,7 +6,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
 	"strings"
 
 	"github.com/coreos/go-semver/semver"
@@ -118,30 +117,6 @@ func visit(name string, files *[]string) filepath.WalkFunc {
 
 		return nil
 	}
-}
-
-func GetPackageVersionOld(pkg string) string {
-	re := regexp.MustCompile("\\n")
-
-	cmd := exec.Command("git", "describe", "--tags", "--dirty", "--always")
-	cmd.Env = append(os.Environ())
-
-	gopath := GetGoPath()
-
-	pkgParts := strings.Split(pkg, "/")
-	cmd.Dir = filepath.Join(gopath, "src", filepath.Join(pkgParts...))
-
-	out, err := cmd.Output() // execute "git describe"
-	if err != nil {
-		log.Fatal(err)
-	}
-	fc := re.ReplaceAllString(string(out), "")
-
-	if len(fc) > 1 {
-		return fc[1:]
-	}
-
-	return fc
 }
 
 func GetGoPath() string {

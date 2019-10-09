@@ -20,7 +20,8 @@ import (
 // Users getting the CLI with a classic "go get" command will still have the version retrieved from the directory
 // $GOPATH/src/github.com/project-flogo/cli
 func main() {
-	currentVersion := util.GetVersion(false)
+
+	_, currentVersion, _ := util.GetCLIInfo()
 
 	f, err := os.Create("./currentversion.go")
 	if err != nil {

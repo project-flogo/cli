@@ -5,6 +5,7 @@ import (
 )
 
 var commands []*cobra.Command
+var pluginPkgs []string
 
 func RegisterPlugin(command *cobra.Command) {
 	commands = append(commands, command)
@@ -16,4 +17,8 @@ func GetPlugins() []*cobra.Command {
 	copy(tmp, commands)
 
 	return tmp
+}
+
+func GetPluginPkgs() []string{
+	return pluginPkgs
 }

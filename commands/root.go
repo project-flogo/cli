@@ -33,7 +33,7 @@ func Initialize(version string) {
 	if len(version) > 0 {
 		rootCmd.Version = version // use version hardcoded by a "go generate" command
 	} else {
-		rootCmd.Version = util.GetVersion(true) // guess version from sources in $GOPATH/src
+		_, rootCmd.Version, _ = util.GetCLIInfo() // guess version from sources in $GOPATH/src
 	}
 
 	rootCmd.SetVersionTemplate(VersionTpl)
