@@ -6,7 +6,6 @@ import (
 	"go/parser"
 	"go/printer"
 	"go/token"
-	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -66,7 +65,7 @@ func UpdateCLI(pluginPkg string, updateOption int) error {
 		return err
 	}
 
-	err = createVersionFile(cliCmdPath, ver)
+	err = util.CreateVersionFile(cliCmdPath, ver)
 	if err != nil {
 		return err
 	}
@@ -189,37 +188,5 @@ func init() {
 	{{range $k, $v := .PluginList}}
 	pluginPkgs = append(pluginPkgs, "{{$k}}")
 	{{end}}
-}
-`))
-
-///////////
-// Version
-
-func createVersionFile(cmdPath, currentVersion string) error {
-
-	f, err := os.Create(filepath.Join(cmdPath, "currentversion.go"))
-	if err != nil {
-		log.Fatal(err)
-		return nil
-	}
-	defer f.Close()
-
-	_ = packageTemplate.Execute(f, struct {
-		Timestamp time.Time
-		Version   string
-	}{
-		Timestamp: time.Now(),
-		Version:   currentVersion,
-	})
-
-	return nil
-}
-
-var packageTemplate = template.Must(template.New("").Parse(`// Generated Code; DO NOT EDIT.
-// {{ .Timestamp }}
-package main
-
-func init() {
-	Version = "{{ .Version }}"
 }
 `))

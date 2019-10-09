@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"text/template"
+	"time"
 )
 
 const (
@@ -48,3 +50,32 @@ func GetPackageVersionOld(pkg string) string {
 
 	return fc
 }
+
+func CreateVersionFile(cmdPath, currentVersion string) error {
+
+	f, err := os.Create(filepath.Join(cmdPath, "currentversion.go"))
+	if err != nil {
+		log.Fatal(err)
+		return nil
+	}
+	defer f.Close()
+
+	_ = packageTemplate.Execute(f, struct {
+		Timestamp time.Time
+		Version   string
+	}{
+		Timestamp: time.Now(),
+		Version:   currentVersion,
+	})
+
+	return nil
+}
+
+var packageTemplate = template.Must(template.New("").Parse(`// Generated Code; DO NOT EDIT.
+// {{ .Timestamp }}
+package main
+
+func init() {
+	Version = "{{ .Version }}"
+}
+`))

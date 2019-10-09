@@ -5,7 +5,6 @@ import (
 	"github.com/project-flogo/cli/common"
 	"github.com/spf13/cobra"
 	"os"
-	"path/filepath"
 )
 
 func init() {
@@ -15,12 +14,6 @@ func init() {
 	pluginCmd.AddCommand(pluginRemoveCmd)
 	rootCmd.AddCommand(pluginCmd)
 }
-
-var (
-	goPath     = os.Getenv("GOPATH")
-	cliPath    = filepath.Join(goPath, filepath.Join("src", "github.com", "project-flogo", "cli"))
-	cliCmdPath = filepath.Join(cliPath, "cmd", "flogo")
-)
 
 var pluginCmd = &cobra.Command{
 	Use:   "plugin",
