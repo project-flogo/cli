@@ -1,6 +1,7 @@
 package util
 
 import (
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -41,6 +42,18 @@ func LoadLocalFile(path string) (string, error) {
 	return string(buf), nil
 }
 
+func Rename(srcPath string) error {
+	oldPath := fmt.Sprintf("%s.old", srcPath)
+	_ = os.Remove(oldPath)
+
+	err := os.Rename(srcPath, oldPath)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func CopyFile(srcFile, destFile string) error {
 	input, err := ioutil.ReadFile(srcFile)
 	if err != nil {
@@ -54,7 +67,6 @@ func CopyFile(srcFile, destFile string) error {
 
 	return nil
 }
-
 
 func Copy(src, dst string, copyMode bool) error {
 	info, err := os.Lstat(src)
