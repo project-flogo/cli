@@ -13,7 +13,7 @@ var Version string = ""
 //go:generate go run gen/version.go
 func main() {
 	//Initialize the commands
-	os.Setenv("GO111MODULE", "on")
+	_ = os.Setenv("GO111MODULE", "on")
 	commands.Initialize(Version)
 	commands.Execute()
 }
