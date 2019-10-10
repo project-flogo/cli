@@ -332,11 +332,10 @@ var emptyFlogoJson = `
 	"name": "{{.AppName}}",
 	"type": "flogo:app",
 	"version": "0.0.1",
-	"description": "My flogo application description",
+	"description": "My Flogo Application Description",
 	"appModel": "1.1.0",
 	"imports": [],
-	"resources":[],
-	"triggers": []
-	
+	"triggers": [],
+	"resources":[]
   }
   `
