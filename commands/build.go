@@ -36,7 +36,14 @@ var buildCmd = &cobra.Command{
 			preRun(cmd, args, verbose)
 			options := common.BuildOptions{Shim: buildShim, OptimizeImports: buildOptimize, EmbedConfig: buildEmbed}
 
-			err := api.BuildProject(common.CurrentProject(), options)
+			err := api.SyncProjectImports(common.CurrentProject())
+
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error synchronzing imports: %v\n", err)
+				os.Exit(1)
+			}
+
+			err = api.BuildProject(common.CurrentProject(), options)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error building project: %v\n", err)
 				os.Exit(1)
