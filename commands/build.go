@@ -37,7 +37,6 @@ var buildCmd = &cobra.Command{
 			options := common.BuildOptions{Shim: buildShim, OptimizeImports: buildOptimize, EmbedConfig: buildEmbed}
 
 			err := api.SyncProjectImports(common.CurrentProject())
-
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error synchronzing imports: %v\n", err)
 				os.Exit(1)
