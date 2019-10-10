@@ -189,6 +189,10 @@ func importDependencies(project common.AppProject) error {
 
 	imports := ai.GetAllImports()
 
+	if len(imports) == 0 {
+		return nil
+	}
+
 	err = project.AddImports(true, imports...)
 	if err != nil {
 		return err
