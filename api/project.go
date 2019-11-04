@@ -14,12 +14,13 @@ import (
 )
 
 const (
-	flogoCoreRepo = "github.com/project-flogo/core"
-	fileFlogoJson = "flogo.json"
-	fileMainGo    = "main.go"
-	fileImportsGo = "imports.go"
-	dirSrc        = "src"
-	dirBin        = "bin"
+	flogoCoreRepo  = "github.com/project-flogo/core"
+	fileFlogoJson  = "flogo.json"
+	fileEngineJson = "engine.json"
+	fileMainGo     = "main.go"
+	fileImportsGo  = "imports.go"
+	dirSrc         = "src"
+	dirBin         = "bin"
 )
 
 var GOOSENV = os.Getenv("GOOS")

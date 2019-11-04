@@ -132,13 +132,25 @@ func createEmbeddedAppGoFile(project common.AppProject, create bool) error {
 	if err != nil {
 		return err
 	}
-
 	flogoJSON := string(buf)
+
+	engineJSON := ""
+
+	if util.FileExists(filepath.Join(project.Dir(), fileEngineJson)) {
+		buf, err = ioutil.ReadFile(filepath.Join(project.Dir(), fileEngineJson))
+		if err != nil {
+			return err
+		}
+
+		engineJSON = string(buf)
+	}
 
 	data := struct {
 		FlogoJSON string
+		EngineJSON string
 	}{
 		flogoJSON,
+		engineJSON,
 	}
 
 	f, err := os.Create(embedSrcPath)
@@ -157,12 +169,13 @@ package main
 
 // embedded flogo app descriptor file
 const flogoJSON string = ` + "`{{.FlogoJSON}}`" + `
+const engineJSON string = ` + "`{{.EngineJSON}}`" + `
 
 func init () {
 	cfgJson = flogoJSON
+	cfgEngine = engineJSON
 }
 `
-
 
 func initMain(project common.AppProject, backupMain bool) error {
 
