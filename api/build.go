@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/project-flogo/cli/common"
 	"github.com/project-flogo/cli/util"
@@ -134,6 +135,11 @@ func createEmbeddedAppGoFile(project common.AppProject, create bool) error {
 	}
 	flogoJSON := string(buf)
 
+	tplFile := tplEmbeddedAppGoFile
+	if !isNewMain(project) {
+		tplFile = tplEmbeddedAppOldGoFile
+	}
+
 	engineJSON := ""
 
 	if util.FileExists(filepath.Join(project.Dir(), fileEngineJson)) {
@@ -157,11 +163,24 @@ func createEmbeddedAppGoFile(project common.AppProject, create bool) error {
 	if err != nil {
 		return err
 	}
-	RenderTemplate(f, tplEmbeddedAppGoFile, &data)
+	RenderTemplate(f, tplFile, &data)
 	_ = f.Close()
 
 	return nil
 }
+
+func isNewMain(project common.AppProject) bool {
+	mainGo := filepath.Join(project.SrcDir(), fileMainGo)
+	buf, err := ioutil.ReadFile(mainGo)
+	if err == nil {
+		mainCode := string(buf)
+		return strings.Contains(mainCode, "cfgEngine")
+
+	}
+
+	return false
+}
+
 
 var tplEmbeddedAppGoFile = `// Do not change this file, it has been generated using flogo-cli
 // If you change it and rebuild the application your changes might get lost
@@ -174,6 +193,18 @@ const engineJSON string = ` + "`{{.EngineJSON}}`" + `
 func init () {
 	cfgJson = flogoJSON
 	cfgEngine = engineJSON
+}
+`
+
+var tplEmbeddedAppOldGoFile = `// Do not change this file, it has been generated using flogo-cli
+// If you change it and rebuild the application your changes might get lost
+package main
+
+// embedded flogo app descriptor file
+const flogoJSON string = ` + "`{{.FlogoJSON}}`" + `
+
+func init () {
+	cfgJson = flogoJSON
 }
 `
 
