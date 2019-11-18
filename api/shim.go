@@ -304,9 +304,7 @@ func init() {
 	common.RegisterBuildPreProcessor(&ShimBuildPreProcessor{})
 }
 
-
 type ShimBuildPreProcessor struct {
-
 }
 
 func (*ShimBuildPreProcessor) DoPreProcessing(project common.AppProject, options common.BuildOptions) error {
@@ -330,7 +328,7 @@ func (*ShimBuildPreProcessor) DoPreProcessing(project common.AppProject, options
 			return err
 		}
 		if buildExist {
-			return nil
+			os.Exit(0)
 		}
 	}
 
