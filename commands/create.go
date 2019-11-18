@@ -26,7 +26,6 @@ var CreateCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 
 		api.SetVerbose(verbose)
-
 		appName := ""
 		if len(args) > 0 {
 			appName = args[0]
@@ -37,7 +36,6 @@ var CreateCmd = &cobra.Command{
 			fmt.Fprintf(os.Stderr, "Error determining working directory: %v\n", err)
 			os.Exit(1)
 		}
-
 		_, err = api.CreateProject(currentDir, appName, flogoJsonPath, coreVersion)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error creating project: %v\n", err)

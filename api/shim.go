@@ -74,7 +74,7 @@ func prepareShim(project common.AppProject, shim string) (bool, error) {
 
 			if _, err := os.Stat(shimFilePath); err == nil {
 
-				err = copyFile(shimFilePath, filepath.Join(project.SrcDir(), fileShimGo))
+				err = util.CopyFile(shimFilePath, filepath.Join(project.SrcDir(), fileShimGo))
 				if err != nil {
 					return false, err
 				}
@@ -88,7 +88,7 @@ func prepareShim(project common.AppProject, shim string) (bool, error) {
 				if _, err := os.Stat(goBuildFilePath); err == nil {
 					fmt.Println("This trigger makes use of a go build file...")
 
-					err = copyFile(goBuildFilePath, filepath.Join(project.SrcDir(), fileBuildGo))
+					err = util.CopyFile(goBuildFilePath, filepath.Join(project.SrcDir(), fileBuildGo))
 					if err != nil {
 						return false, err
 					}
@@ -102,7 +102,7 @@ func prepareShim(project common.AppProject, shim string) (bool, error) {
 					//look for Makefile and execute it
 					fmt.Println("Make File:", makefilePath)
 
-					err = copyFile(makefilePath, filepath.Join(project.SrcDir(), fileMakefile))
+					err = util.CopyFile(makefilePath, filepath.Join(project.SrcDir(), fileMakefile))
 					if err != nil {
 						return false, err
 					}
@@ -298,4 +298,41 @@ func GetAliasRef(contribType string, alias string) (string, bool) {
 	}
 
 	return ref, true
+}
+
+func init() {
+	common.RegisterBuildPreProcessor(&ShimBuildPreProcessor{})
+}
+
+
+type ShimBuildPreProcessor struct {
+
+}
+
+func (*ShimBuildPreProcessor) DoPreProcessing(project common.AppProject, options common.BuildOptions) error {
+
+	useShim := options.Shim != ""
+
+	err := createShimSupportGoFile(project, useShim)
+	if err != nil {
+		return err
+	}
+
+	if useShim {
+		options.EmbedConfig = true
+		options.BackupMain = true
+
+		if Verbose() {
+			fmt.Println("Preparing shim...")
+		}
+		buildExist, err := prepareShim(project, options.Shim)
+		if err != nil {
+			return err
+		}
+		if buildExist {
+			return nil
+		}
+	}
+
+	return nil
 }

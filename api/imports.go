@@ -58,6 +58,27 @@ func SyncProjectImports(project common.AppProject) error {
 		}
 	}
 
+	if util.FileExists(filepath.Join(project.Dir(), fileEngineJson)) {
+		engineImports, err := util.GetEngineImports(filepath.Join(project.Dir(), fileEngineJson), project.DepManager())
+		if err != nil {
+			return err
+		}
+
+		engImportsMap := make(map[string]util.Import)
+		for _, imp := range engineImports.GetAllImports() {
+			engImportsMap[imp.GoImportPath()] = imp
+		}
+
+		for goPath, imp := range engImportsMap {
+			if _, ok := goImportsMap[goPath]; !ok {
+				toAdd = append(toAdd, imp)
+				if Verbose() {
+					fmt.Println("Adding missing Go import: ", goPath)
+				}
+			}
+		}
+	}
+
 	var toRemove []string
 	for goPath := range goImportsMap {
 		if _, ok := appImportsMap[goPath]; !ok {

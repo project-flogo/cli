@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/project-flogo/cli/common"
 	"github.com/project-flogo/cli/util"
@@ -19,47 +20,32 @@ const (
 	fileEmbeddedAppGo string = "embeddedapp.go"
 )
 
-type BuildOptions struct {
-	OptimizeImports bool
-	EmbedConfig     bool
-	Shim            string
-}
-
-func BuildProject(project common.AppProject, options BuildOptions) error {
+func BuildProject(project common.AppProject, options common.BuildOptions) error {
 
 	err := project.DepManager().AddReplacedContribForBuild()
 	if err != nil {
 		return err
 	}
 
-	useShim := options.Shim != ""
+	buildPreProcessors := common.BuildPreProcessors()
 
-	err = createEmbeddedAppGoFile(project, options.EmbedConfig || useShim)
+	if len(buildPreProcessors) > 0 {
+		for _, processor := range buildPreProcessors {
+			err = processor.DoPreProcessing(project,options)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	err = createEmbeddedAppGoFile(project, options.EmbedConfig)
 	if err != nil {
 		return err
 	}
 
-	err = createShimSupportGoFile(project, useShim)
+	err = initMain(project, options.BackupMain)
 	if err != nil {
 		return err
-	}
-
-	err = initMain(project, useShim)
-	if err != nil {
-		return err
-	}
-
-	if useShim {
-		if Verbose() {
-			fmt.Println("Preparing shim...")
-		}
-		buildExist, err := prepareShim(project, options.Shim)
-		if err != nil {
-			return err
-		}
-		if buildExist {
-			return nil
-		}
 	}
 
 	if options.OptimizeImports {
@@ -111,6 +97,17 @@ func BuildProject(project common.AppProject, options BuildOptions) error {
 		return fmt.Errorf("failed to build application, run with --verbose to see details")
 	}
 
+	buildPostProcessors := common.BuildPostProcessors()
+
+	if len(buildPostProcessors) > 0 {
+		for _, processor := range buildPostProcessors {
+			err = processor.DoPostProcessing(project)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -136,26 +133,70 @@ func createEmbeddedAppGoFile(project common.AppProject, create bool) error {
 	if err != nil {
 		return err
 	}
-
 	flogoJSON := string(buf)
+
+	tplFile := tplEmbeddedAppGoFile
+	if !isNewMain(project) {
+		tplFile = tplEmbeddedAppOldGoFile
+	}
+
+	engineJSON := ""
+
+	if util.FileExists(filepath.Join(project.Dir(), fileEngineJson)) {
+		buf, err = ioutil.ReadFile(filepath.Join(project.Dir(), fileEngineJson))
+		if err != nil {
+			return err
+		}
+
+		engineJSON = string(buf)
+	}
 
 	data := struct {
 		FlogoJSON string
+		EngineJSON string
 	}{
 		flogoJSON,
+		engineJSON,
 	}
 
 	f, err := os.Create(embedSrcPath)
 	if err != nil {
 		return err
 	}
-	RenderTemplate(f, tplEmbeddedAppGoFile, &data)
-	f.Close()
+	RenderTemplate(f, tplFile, &data)
+	_ = f.Close()
 
 	return nil
 }
 
+func isNewMain(project common.AppProject) bool {
+	mainGo := filepath.Join(project.SrcDir(), fileMainGo)
+	buf, err := ioutil.ReadFile(mainGo)
+	if err == nil {
+		mainCode := string(buf)
+		return strings.Contains(mainCode, "cfgEngine")
+
+	}
+
+	return false
+}
+
+
 var tplEmbeddedAppGoFile = `// Do not change this file, it has been generated using flogo-cli
+// If you change it and rebuild the application your changes might get lost
+package main
+
+// embedded flogo app descriptor file
+const flogoJSON string = ` + "`{{.FlogoJSON}}`" + `
+const engineJSON string = ` + "`{{.EngineJSON}}`" + `
+
+func init () {
+	cfgJson = flogoJSON
+	cfgEngine = engineJSON
+}
+`
+
+var tplEmbeddedAppOldGoFile = `// Do not change this file, it has been generated using flogo-cli
 // If you change it and rebuild the application your changes might get lost
 package main
 
@@ -166,21 +207,6 @@ func init () {
 	cfgJson = flogoJSON
 }
 `
-
-func copyFile(srcFilePath, destFilePath string) error {
-
-	bytes, err := ioutil.ReadFile(srcFilePath)
-	if err != nil {
-		return err
-	}
-
-	err = ioutil.WriteFile(destFilePath, bytes, 0644)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
 
 func initMain(project common.AppProject, backupMain bool) error {
 

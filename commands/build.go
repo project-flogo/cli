@@ -34,9 +34,15 @@ var buildCmd = &cobra.Command{
 
 		if flogoJsonFile == "" {
 			preRun(cmd, args, verbose)
-			options := api.BuildOptions{Shim: buildShim, OptimizeImports: buildOptimize, EmbedConfig: buildEmbed}
+			options := common.BuildOptions{Shim: buildShim, OptimizeImports: buildOptimize, EmbedConfig: buildEmbed}
 
-			err := api.BuildProject(common.CurrentProject(), options)
+			err := api.SyncProjectImports(common.CurrentProject())
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error synchronzing imports: %v\n", err)
+				os.Exit(1)
+			}
+
+			err = api.BuildProject(common.CurrentProject(), options)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error building project: %v\n", err)
 				os.Exit(1)
@@ -60,7 +66,7 @@ var buildCmd = &cobra.Command{
 
 			common.SetCurrentProject(tempProject)
 
-			options := api.BuildOptions{Shim: buildShim, OptimizeImports: buildOptimize, EmbedConfig: buildEmbed}
+			options := common.BuildOptions{Shim: buildShim, OptimizeImports: buildOptimize, EmbedConfig: buildEmbed}
 
 			err = api.BuildProject(common.CurrentProject(), options)
 			if err != nil {
