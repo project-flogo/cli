@@ -14,6 +14,7 @@ import (
 var buildShim string
 var buildOptimize bool
 var buildEmbed bool
+var syncImport bool
 var flogoJsonFile string
 
 func init() {
@@ -21,6 +22,7 @@ func init() {
 	buildCmd.Flags().BoolVarP(&buildOptimize, "optimize", "o", false, "optimize build")
 	buildCmd.Flags().BoolVarP(&buildEmbed, "embed", "e", false, "embed configuration in binary")
 	buildCmd.Flags().StringVarP(&flogoJsonFile, "file", "f", "", "specify a flogo.json to build")
+	buildCmd.Flags().BoolVarP(&syncImport, "sync", "s", false, "sync imports during build")
 	rootCmd.AddCommand(buildCmd)
 }
 
@@ -31,15 +33,17 @@ var buildCmd = &cobra.Command{
 	Long:             `Build the flogo application.`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {},
 	Run: func(cmd *cobra.Command, args []string) {
-
+		var err error
 		if flogoJsonFile == "" {
 			preRun(cmd, args, verbose)
 			options := common.BuildOptions{Shim: buildShim, OptimizeImports: buildOptimize, EmbedConfig: buildEmbed}
 
-			err := api.SyncProjectImports(common.CurrentProject())
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Error synchronzing imports: %v\n", err)
-				os.Exit(1)
+			if syncImport {
+				err = api.SyncProjectImports(common.CurrentProject())
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "Error synchronzing imports: %v\n", err)
+					os.Exit(1)
+				}
 			}
 
 			err = api.BuildProject(common.CurrentProject(), options)
