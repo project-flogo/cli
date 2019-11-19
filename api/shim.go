@@ -302,14 +302,17 @@ func GetAliasRef(contribType string, alias string) (string, bool) {
 
 func init() {
 	common.RegisterBuildPreProcessor(&ShimBuildPreProcessor{})
-}
 
+}
 
 type ShimBuildPreProcessor struct {
-
 }
 
-func (*ShimBuildPreProcessor) DoPreProcessing(project common.AppProject, options common.BuildOptions) error {
+func (*ShimBuildPreProcessor) Type() string {
+	return "shim"
+}
+
+func (*ShimBuildPreProcessor) DoPreProcessing(project common.AppProject, options *common.BuildOptions) error {
 
 	useShim := options.Shim != ""
 
@@ -330,6 +333,7 @@ func (*ShimBuildPreProcessor) DoPreProcessing(project common.AppProject, options
 			return err
 		}
 		if buildExist {
+			options.BuildExist = true
 			return nil
 		}
 	}

@@ -31,77 +31,19 @@ func BuildProject(project common.AppProject, options common.BuildOptions) error 
 
 	if len(buildPreProcessors) > 0 {
 		for _, processor := range buildPreProcessors {
-			err = processor.DoPreProcessing(project,options)
+			err = processor.DoPreProcessing(project, &options)
 			if err != nil {
 				return err
 			}
 		}
 	}
-
-	err = createEmbeddedAppGoFile(project, options.EmbedConfig)
-	if err != nil {
-		return err
-	}
-
-	err = initMain(project, options.BackupMain)
-	if err != nil {
-		return err
-	}
-
-	if options.OptimizeImports {
-		if Verbose() {
-			fmt.Println("Optimizing imports...")
-		}
-		err := optimizeImports(project)
-		defer restoreImports(project)
-
-		if err != nil {
-			return err
-		}
-	}
-
-	if Verbose() {
-		fmt.Println("Performing 'go build'...")
-	}
-	err = util.ExecCmd(exec.Command("go", "build"), project.SrcDir())
-	if err != nil {
-		fmt.Println("Error in building", project.SrcDir())
-		return err
-	}
-
-	// assume linux/darwin env or cross platform by default
-	exe := "main"
-
-	if GOOSENV == "windows" || (runtime.GOOS == "windows" && GOOSENV == "") {
-		// env or cross platform is windows
-		exe = "main.exe"
-	}
-
-	exePath := filepath.Join(project.SrcDir(), exe)
-
-	if common.Verbose() {
-		fmt.Println("Path to executable is:", exePath)
-	}
-
-	if _, err := os.Stat(exePath); err == nil {
-		finalExePath := project.Executable()
-		err = os.MkdirAll(filepath.Dir(finalExePath), os.ModePerm)
-		if err != nil {
-			return err
-		}
-		err = os.Rename(exePath, project.Executable())
-		if err != nil {
-			return err
-		}
-	} else {
-		return fmt.Errorf("failed to build application, run with --verbose to see details")
-	}
-
+	fmt.Println("Optionsssssss....", options.EmbedConfig, options.BackupMain, options.BuildExist)
 	buildPostProcessors := common.BuildPostProcessors()
 
 	if len(buildPostProcessors) > 0 {
 		for _, processor := range buildPostProcessors {
-			err = processor.DoPostProcessing(project)
+
+			err = processor.DoPostProcessing(project, &options)
 			if err != nil {
 				return err
 			}
@@ -152,7 +94,7 @@ func createEmbeddedAppGoFile(project common.AppProject, create bool) error {
 	}
 
 	data := struct {
-		FlogoJSON string
+		FlogoJSON  string
 		EngineJSON string
 	}{
 		flogoJSON,
@@ -180,7 +122,6 @@ func isNewMain(project common.AppProject) bool {
 
 	return false
 }
-
 
 var tplEmbeddedAppGoFile = `// Do not change this file, it has been generated using flogo-cli
 // If you change it and rebuild the application your changes might get lost
@@ -300,4 +241,106 @@ func restoreImports(project common.AppProject) {
 			fmt.Fprintf(os.Stderr, "Manually remove backup imports file '%s'\n", importsFileOrig)
 		}
 	}
+}
+
+func init() {
+	common.RegisterBuildPreProcessor(&DefaultPreProcessor{})
+	common.RegisterBuildPostProcessor(&DefaultPostProcessor{})
+}
+
+type DefaultPreProcessor struct {
+}
+
+type DefaultPostProcessor struct {
+}
+
+func (*DefaultPostProcessor) DoPostProcessing(project common.AppProject, options *common.BuildOptions) error {
+
+	if !options.BuildExist {
+
+		err := createEmbeddedAppGoFile(project, options.EmbedConfig)
+		if err != nil {
+			return err
+		}
+
+		err = initMain(project, options.BackupMain)
+		if err != nil {
+			return err
+		}
+
+		if Verbose() {
+			fmt.Println("Performing 'go build'...")
+		}
+		err = util.ExecCmd(exec.Command("go", "build"), project.SrcDir())
+		if err != nil {
+			fmt.Println("Error in building", project.SrcDir())
+			return err
+		}
+
+		// assume linux/darwin env or cross platform by default
+		exe := "main"
+
+		if GOOSENV == "windows" || (runtime.GOOS == "windows" && GOOSENV == "") {
+			// env or cross platform is windows
+			exe = "main.exe"
+		}
+
+		exePath := filepath.Join(project.SrcDir(), exe)
+
+		if common.Verbose() {
+			fmt.Println("Path to executable is:", exePath)
+		}
+
+		if _, err := os.Stat(exePath); err == nil {
+			finalExePath := project.Executable()
+			err = os.MkdirAll(filepath.Dir(finalExePath), os.ModePerm)
+			if err != nil {
+				return err
+			}
+			err = os.Rename(exePath, project.Executable())
+			if err != nil {
+				return err
+			}
+		} else {
+			return fmt.Errorf("failed to build application, run with --verbose to see details")
+		}
+
+	}
+
+	return nil
+}
+
+func (*DefaultPreProcessor) Type() string {
+	return "default"
+}
+
+func (*DefaultPreProcessor) DoPreProcessing(project common.AppProject, options *common.BuildOptions) error {
+
+	var err error
+
+	if options.Shim == "" {
+		err = createEmbeddedAppGoFile(project, options.EmbedConfig)
+		if err != nil {
+			return err
+		}
+
+		err = initMain(project, options.BackupMain)
+		if err != nil {
+			return err
+		}
+
+		if options.OptimizeImports {
+			if Verbose() {
+				fmt.Println("Optimizing imports...")
+			}
+			err := optimizeImports(project)
+			defer restoreImports(project)
+
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }

@@ -4,15 +4,17 @@ type BuildOptions struct {
 	OptimizeImports bool
 	EmbedConfig     bool
 	BackupMain      bool
+	BuildExist      bool
 	Shim            string
 }
 
 type BuildPreProcessor interface {
-	DoPreProcessing(project AppProject, options BuildOptions) error
+	DoPreProcessing(project AppProject, options *BuildOptions) error
+	Type() string
 }
 
 type BuildPostProcessor interface {
-	DoPostProcessing(project AppProject) error
+	DoPostProcessing(project AppProject, options *BuildOptions) error
 }
 
 var buildPreProcessors []BuildPreProcessor
