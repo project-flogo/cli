@@ -37,7 +37,7 @@ func BuildProject(project common.AppProject, options common.BuildOptions) error 
 			}
 		}
 	}
-	fmt.Println("Optionsssssss....", options.EmbedConfig, options.BackupMain, options.BuildExist)
+
 	buildPostProcessors := common.BuildPostProcessors()
 
 	if len(buildPostProcessors) > 0 {
