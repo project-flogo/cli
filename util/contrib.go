@@ -9,6 +9,10 @@ import (
 	"strings"
 )
 
+const (
+	fileDescriptorJson string = "descriptor.json"
+)
+
 var contribDescriptors = []string{"descriptor.json", "activity.json", "trigger.json", "action.json"}
 
 // FlogoAppDescriptor is the descriptor for a Flogo application
@@ -101,4 +105,41 @@ func ReadContribDescriptor(descriptorFile string) (*FlogoContribDescriptor, erro
 	}
 
 	return descriptor, nil
+}
+
+func GetContribType(depManager DepManager, ref string) (string, error) {
+
+	refAsFlogoImport, err := NewFlogoImportFromPath(ref)
+	if err != nil {
+		return "", err
+	}
+
+	impPath, err := depManager.GetPath(refAsFlogoImport)//(refAsFlogoImport)
+	if err != nil {
+		return "", err
+	}
+	var descriptorPath string
+
+	if _, err := os.Stat(filepath.Join(impPath, fileDescriptorJson)); err == nil {
+		descriptorPath = filepath.Join(impPath, fileDescriptorJson)
+
+	} else if _, err := os.Stat(filepath.Join(impPath, "activity.json")); err == nil {
+		descriptorPath = filepath.Join(impPath, "activity.json")
+	} else if _, err := os.Stat(filepath.Join(impPath, "trigger.json")); err == nil {
+		descriptorPath = filepath.Join(impPath, "trigger.json")
+	} else if _, err := os.Stat(filepath.Join(impPath, "action.json")); err == nil {
+		descriptorPath = filepath.Join(impPath, "action.json")
+	}
+
+	if _, err := os.Stat(descriptorPath); descriptorPath != "" && err == nil {
+
+		desc, err := ReadContribDescriptor(descriptorPath)
+		if err != nil {
+			return "", err
+		}
+
+		return desc.Type, nil
+	}
+
+	return "", nil
 }

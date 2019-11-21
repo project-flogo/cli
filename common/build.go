@@ -1,10 +1,19 @@
 package common
 
+const (
+	fileMainGo     = "main.go"
+)
+
+
 type BuildOptions struct {
 	OptimizeImports bool
 	EmbedConfig     bool
 	BackupMain      bool
 	Shim            string
+}
+
+type Builder interface {
+	Build(project AppProject) error
 }
 
 type BuildPreProcessor interface {
@@ -33,3 +42,5 @@ func RegisterBuildPostProcessor(processor BuildPostProcessor) {
 func BuildPostProcessors() []BuildPostProcessor {
 	return buildPostProcessors
 }
+
+
