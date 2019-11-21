@@ -149,7 +149,7 @@ func prepareShim(project common.AppProject, shim string) (bool, error) {
 						return false, err
 					}
 				} else {
-					return false, fmt.Errorf("could not find gobuild or makefile for shim")
+					return true, nil
 				}
 			}
 
