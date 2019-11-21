@@ -7,9 +7,7 @@ import (
 	"go/token"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strings"
 
 	"github.com/project-flogo/cli/common"
@@ -38,14 +36,26 @@ func BuildProject(project common.AppProject, options common.BuildOptions) error 
 		}
 	}
 
-	err = createEmbeddedAppGoFile(project, options.EmbedConfig)
-	if err != nil {
-		return err
+	var builder common.Builder
+	embedConfig := options.EmbedConfig
+
+	if options.Shim != "" {
+		builder = &ShimBuilder{shim:options.Shim}
+		embedConfig = true
+	} else {
+		builder = &AppBuilder{}
 	}
 
-	err = initMain(project, options.BackupMain)
-	if err != nil {
-		return err
+	if embedConfig {
+		err = createEmbeddedAppGoFile(project)
+		if err != nil {
+			return err
+		}
+	} else {
+		err = cleanupEmbeddedAppGoFile(project)
+		if err != nil {
+			return err
+		}
 	}
 
 	if options.OptimizeImports {
@@ -60,41 +70,9 @@ func BuildProject(project common.AppProject, options common.BuildOptions) error 
 		}
 	}
 
-	if Verbose() {
-		fmt.Println("Performing 'go build'...")
-	}
-	err = util.ExecCmd(exec.Command("go", "build"), project.SrcDir())
+	err = builder.Build(project)
 	if err != nil {
-		fmt.Println("Error in building", project.SrcDir())
 		return err
-	}
-
-	// assume linux/darwin env or cross platform by default
-	exe := "main"
-
-	if GOOSENV == "windows" || (runtime.GOOS == "windows" && GOOSENV == "") {
-		// env or cross platform is windows
-		exe = "main.exe"
-	}
-
-	exePath := filepath.Join(project.SrcDir(), exe)
-
-	if common.Verbose() {
-		fmt.Println("Path to executable is:", exePath)
-	}
-
-	if _, err := os.Stat(exePath); err == nil {
-		finalExePath := project.Executable()
-		err = os.MkdirAll(filepath.Dir(finalExePath), os.ModePerm)
-		if err != nil {
-			return err
-		}
-		err = os.Rename(exePath, project.Executable())
-		if err != nil {
-			return err
-		}
-	} else {
-		return fmt.Errorf("failed to build application, run with --verbose to see details")
 	}
 
 	buildPostProcessors := common.BuildPostProcessors()
@@ -111,22 +89,27 @@ func BuildProject(project common.AppProject, options common.BuildOptions) error 
 	return nil
 }
 
-func createEmbeddedAppGoFile(project common.AppProject, create bool) error {
-
+func cleanupEmbeddedAppGoFile(project common.AppProject) error {
 	embedSrcPath := filepath.Join(project.SrcDir(), fileEmbeddedAppGo)
 
-	if !create {
 		if _, err := os.Stat(embedSrcPath); err == nil {
+			if Verbose() {
+				fmt.Println("Removing embed configuration")
+			}
 			err = os.Remove(embedSrcPath)
 			if err != nil {
 				return err
 			}
 		}
 		return nil
-	}
+}
+
+func createEmbeddedAppGoFile(project common.AppProject) error {
+
+	embedSrcPath := filepath.Join(project.SrcDir(), fileEmbeddedAppGo)
 
 	if Verbose() {
-		fmt.Println("Embedding flogo.json in application...")
+		fmt.Println("Embedding configuration in application...")
 	}
 
 	buf, err := ioutil.ReadFile(filepath.Join(project.Dir(), fileFlogoJson))

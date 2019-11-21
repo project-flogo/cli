@@ -160,3 +160,15 @@ func DirExists(path string) bool {
 	}
 	return info.IsDir()
 }
+
+func DeleteFile(path string) error {
+
+	if _, err := os.Stat(path); err == nil {
+		err = os.Remove(path)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}

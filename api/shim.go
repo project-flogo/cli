@@ -26,6 +26,37 @@ var fileSampleShimSupport = filepath.Join("examples", "engine", "shim", fileShim
 
 var flogoImportPattern = regexp.MustCompile(`^(([^ ]*)[ ]+)?([^@:]*)@?([^:]*)?:?(.*)?$`)
 
+
+type ShimBuilder struct {
+	shim string
+}
+
+func (sb *ShimBuilder) Build(project common.AppProject) error {
+
+	err := backupMain(project)
+	if err != nil {
+		return err
+	}
+
+	err = createShimSupportGoFile(project)
+	if err != nil {
+		return err
+	}
+
+	if Verbose() {
+		fmt.Println("Preparing shim...")
+	}
+	_, err = prepareShim(project, sb.shim)
+	if err != nil {
+		return err
+	}
+
+	//cleanup shim files
+	shimCleanup(project)
+
+	return nil
+}
+
 func prepareShim(project common.AppProject, shim string) (bool, error) {
 
 	buf, err := ioutil.ReadFile(filepath.Join(project.Dir(), fileFlogoJson))
@@ -118,7 +149,7 @@ func prepareShim(project common.AppProject, shim string) (bool, error) {
 						return false, err
 					}
 				} else {
-					return false, nil
+					return false, fmt.Errorf("could not find gobuild or makefile for shim")
 				}
 			}
 
@@ -129,29 +160,29 @@ func prepareShim(project common.AppProject, shim string) (bool, error) {
 	return true, nil
 }
 
-func createShimSupportGoFile(project common.AppProject, create bool) error {
+func shimCleanup(project common.AppProject) {
+
+	if Verbose() {
+		fmt.Println("Cleaning up shim support files...")
+	}
+
+	err := util.DeleteFile(filepath.Join(project.SrcDir(), fileShimSupportGo))
+	if err != nil {
+		fmt.Printf("Unable to delete: %s", fileShimSupportGo)
+	}
+	err = util.DeleteFile(filepath.Join(project.SrcDir(), fileShimGo))
+	if err != nil {
+		fmt.Printf("Unable to delete: %s", fileShimGo)
+	}
+	err = util.DeleteFile(filepath.Join(project.SrcDir(), fileBuildGo))
+	if err != nil {
+		fmt.Printf("Unable to delete: %s", fileBuildGo)
+	}
+}
+
+func createShimSupportGoFile(project common.AppProject) error {
 
 	shimSrcPath := filepath.Join(project.SrcDir(), fileShimSupportGo)
-
-	if !create {
-		if _, err := os.Stat(shimSrcPath); err == nil {
-			err = os.Remove(shimSrcPath)
-			if err != nil {
-				return err
-			}
-		}
-
-		//
-		//shimSrcPath := filepath.Join(project.SrcDir(), fileShimSupportGo)
-		//
-		//if _, err := os.Stat(shimSrcPath); err == nil {
-		//	os.Remove(shimSrcPath)
-		//	if err != nil {
-		//		return err
-		//	}
-		//}
-		return nil
-	}
 
 	if Verbose() {
 		fmt.Println("Creating shim support files...")
@@ -216,54 +247,16 @@ func registerImport(project common.AppProject, anImport string) error {
 		return fmt.Errorf("invalid import %s", anImport)
 	}
 
-	ct, err := getContribType(project, ref)
+	ct, err := util.GetContribType(project.DepManager(), ref)
 	if err != nil {
 		return err
 	}
 
 	if ct != "" {
 		RegisterAlias(ct, alias, ref)
-
 	}
 
 	return nil
-}
-
-func getContribType(project common.AppProject, ref string) (string, error) {
-
-	refAsFlogoImport, err := util.NewFlogoImportFromPath(ref)
-	if err != nil {
-		return "", err
-	}
-
-	impPath, err := project.GetPath(refAsFlogoImport)
-	if err != nil {
-		return "", err
-	}
-	var descriptorPath string
-
-	if _, err := os.Stat(filepath.Join(impPath, fileDescriptorJson)); err == nil {
-		descriptorPath = filepath.Join(impPath, fileDescriptorJson)
-
-	} else if _, err := os.Stat(filepath.Join(impPath, "activity.json")); err == nil {
-		descriptorPath = filepath.Join(impPath, "activity.json")
-	} else if _, err := os.Stat(filepath.Join(impPath, "trigger.json")); err == nil {
-		descriptorPath = filepath.Join(impPath, "trigger.json")
-	} else if _, err := os.Stat(filepath.Join(impPath, "action.json")); err == nil {
-		descriptorPath = filepath.Join(impPath, "action.json")
-	}
-
-	if _, err := os.Stat(descriptorPath); descriptorPath != "" && err == nil {
-
-		desc, err := util.ReadContribDescriptor(descriptorPath)
-		if err != nil {
-			return "", err
-		}
-
-		return desc.Type, nil
-	}
-
-	return "", nil
 }
 
 var aliases = make(map[string]map[string]string)
@@ -298,39 +291,4 @@ func GetAliasRef(contribType string, alias string) (string, bool) {
 	}
 
 	return ref, true
-}
-
-func init() {
-	common.RegisterBuildPreProcessor(&ShimBuildPreProcessor{})
-}
-
-type ShimBuildPreProcessor struct {
-}
-
-func (*ShimBuildPreProcessor) DoPreProcessing(project common.AppProject, options common.BuildOptions) error {
-
-	useShim := options.Shim != ""
-
-	err := createShimSupportGoFile(project, useShim)
-	if err != nil {
-		return err
-	}
-
-	if useShim {
-		options.EmbedConfig = true
-		options.BackupMain = true
-
-		if Verbose() {
-			fmt.Println("Preparing shim...")
-		}
-		buildExist, err := prepareShim(project, options.Shim)
-		if err != nil {
-			return err
-		}
-		if buildExist {
-			os.Exit(0)
-		}
-	}
-
-	return nil
 }
