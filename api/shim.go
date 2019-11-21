@@ -28,6 +28,7 @@ var flogoImportPattern = regexp.MustCompile(`^(([^ ]*)[ ]+)?([^@:]*)@?([^:]*)?:?
 
 
 type ShimBuilder struct {
+	appBuilder common.Builder
 	shim string
 }
 
@@ -38,6 +39,8 @@ func (sb *ShimBuilder) Build(project common.AppProject) error {
 		return err
 	}
 
+	defer shimCleanup(project)
+
 	err = createShimSupportGoFile(project)
 	if err != nil {
 		return err
@@ -46,13 +49,17 @@ func (sb *ShimBuilder) Build(project common.AppProject) error {
 	if Verbose() {
 		fmt.Println("Preparing shim...")
 	}
-	_, err = prepareShim(project, sb.shim)
+	built, err := prepareShim(project, sb.shim)
 	if err != nil {
 		return err
 	}
 
-	//cleanup shim files
-	shimCleanup(project)
+	if !built {
+		err := simpleGoBuild(project)
+		if err != nil {
+			return err
+		}
+	}
 
 	return nil
 }
@@ -149,7 +156,7 @@ func prepareShim(project common.AppProject, shim string) (bool, error) {
 						return false, err
 					}
 				} else {
-					return true, nil
+					return false, nil
 				}
 			}
 
@@ -157,7 +164,7 @@ func prepareShim(project common.AppProject, shim string) (bool, error) {
 		}
 	}
 
-	return true, nil
+	return false, fmt.Errorf("unable to to find shim trigger: %s", shim)
 }
 
 func shimCleanup(project common.AppProject) {
