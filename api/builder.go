@@ -20,6 +20,16 @@ func (*AppBuilder) Build(project common.AppProject) error {
 		return err
 	}
 
+	err = simpleGoBuild(project)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+
+func simpleGoBuild(project common.AppProject) error {
 	if _, err := os.Stat(project.BinDir()); err != nil {
 		if Verbose() {
 			fmt.Println("Creating 'bin' directory")
@@ -34,7 +44,7 @@ func (*AppBuilder) Build(project common.AppProject) error {
 		fmt.Println("Performing 'go build'...")
 	}
 
-	err = util.ExecCmd(exec.Command("go", "build", "-o", project.Executable()), project.SrcDir())
+	err := util.ExecCmd(exec.Command("go", "build", "-o", project.Executable()), project.SrcDir())
 	if err != nil {
 		fmt.Println("Error in building", project.SrcDir())
 		return err
