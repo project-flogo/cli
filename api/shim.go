@@ -55,6 +55,8 @@ func (sb *ShimBuilder) Build(project common.AppProject) error {
 	}
 
 	if !built {
+		fmt.Println("Using go build to build shim...")
+
 		err := simpleGoBuild(project)
 		if err != nil {
 			return err
@@ -124,7 +126,7 @@ func prepareShim(project common.AppProject, shim string) (bool, error) {
 				makefilePath := filepath.Join(shimFilePath, dirShim, fileMakefile)
 
 				if _, err := os.Stat(goBuildFilePath); err == nil {
-					fmt.Println("This trigger makes use of a go build file...")
+					fmt.Println("Using build.go to build shim......")
 
 					err = util.CopyFile(goBuildFilePath, filepath.Join(project.SrcDir(), fileBuildGo))
 					if err != nil {
@@ -136,13 +138,19 @@ func prepareShim(project common.AppProject, shim string) (bool, error) {
 					if err != nil {
 						return false, err
 					}
+
+					return true, nil
 				} else if _, err := os.Stat(makefilePath); err == nil {
 					//look for Makefile and execute it
-					fmt.Println("Make File:", makefilePath)
+					fmt.Println("Using make file to build shim...")
 
 					err = util.CopyFile(makefilePath, filepath.Join(project.SrcDir(), fileMakefile))
 					if err != nil {
 						return false, err
+					}
+
+					if Verbose() {
+						fmt.Println("Make File:", makefilePath)
 					}
 
 					// Execute make
@@ -155,6 +163,8 @@ func prepareShim(project common.AppProject, shim string) (bool, error) {
 					if err != nil {
 						return false, err
 					}
+
+					return true, nil
 				} else {
 					return false, nil
 				}
