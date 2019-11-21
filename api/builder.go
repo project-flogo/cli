@@ -27,6 +27,10 @@ func (*AppBuilder) Build(project common.AppProject) error {
 		if Verbose() {
 			fmt.Println("Creating 'bin' directory")
 		}
+		err = os.MkdirAll(project.BinDir(), os.ModePerm)
+		if err != nil {
+			return err
+		}
 	}
 
 	err = util.ExecCmd(exec.Command("go", "build", "-o", project.Executable()), project.SrcDir())
