@@ -1,14 +1,8 @@
 package common
 
-const (
-	fileMainGo     = "main.go"
-)
-
-
 type BuildOptions struct {
 	OptimizeImports bool
 	EmbedConfig     bool
-	BackupMain      bool
 	Shim            string
 }
 
