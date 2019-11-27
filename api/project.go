@@ -213,12 +213,15 @@ func (p *appProjectImpl) addImportsInJson(ignoreError bool, imports ...util.Impo
 	return nil
 }
 
-func (p *appProjectImpl) AddImports(ignoreError bool, imports ...util.Import) error {
+func (p *appProjectImpl) AddImports(ignoreError bool, addToJson bool, imports ...util.Import) error {
 	err := p.addImportsInGo(ignoreError, imports...) // begin with Go imports as they are more likely to fail
 	if err != nil {
 		return err
 	}
-	err = p.addImportsInJson(ignoreError, imports...) // adding imports in JSON after Go imports ensure the flogo.json is self-sufficient
+
+	if addToJson {
+		err = p.addImportsInJson(ignoreError, imports...) // adding imports in JSON after Go imports ensure the flogo.json is self-sufficient
+	}
 
 	return err
 }

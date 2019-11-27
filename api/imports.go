@@ -32,17 +32,15 @@ func SyncProjectImports(project common.AppProject) error {
 	if err != nil {
 		return err
 	}
-
-	goImports, err := project.GetGoImports(false)
-	if err != nil {
-		return err
-	}
-
 	appImportsMap := make(map[string]util.Import)
 	for _, imp := range appImports.GetAllImports() {
 		appImportsMap[imp.GoImportPath()] = imp
 	}
 
+	goImports, err := project.GetGoImports(false)
+	if err != nil {
+		return err
+	}
 	goImportsMap := make(map[string]util.Import)
 	for _, imp := range goImports {
 		goImportsMap[imp.GoImportPath()] = imp
@@ -94,7 +92,7 @@ func SyncProjectImports(project common.AppProject) error {
 		return err
 	}
 
-	err = project.AddImports(false, toAdd...)
+	err = project.AddImports(false, false, toAdd...)
 	if err != nil {
 		return err
 	}

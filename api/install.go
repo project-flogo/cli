@@ -17,7 +17,7 @@ func InstallPackage(project common.AppProject, pkg string) error {
 		return err
 	}
 
-	err = project.AddImports(false, flogoImport)
+	err = project.AddImports(false, true, flogoImport)
 	if err != nil {
 		return err
 	}

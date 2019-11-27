@@ -4,10 +4,6 @@ import (
 	"github.com/project-flogo/cli/util"
 )
 
-const (
-	fileDescriptorJson string = "descriptor.json"
-)
-
 var verbose = false
 
 func SetVerbose(enable bool) {
