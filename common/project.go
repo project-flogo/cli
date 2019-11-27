@@ -9,7 +9,7 @@ type AppProject interface {
 	BinDir() string
 	SrcDir() string
 	Executable() string
-	AddImports(ignoreError bool, imports ...util.Import) error
+	AddImports(ignoreError bool, addToJson bool, imports ...util.Import) error
 	RemoveImports(imports ...string) error
 	GetPath(flogoImport util.Import) (string, error)
 	DepManager() util.DepManager

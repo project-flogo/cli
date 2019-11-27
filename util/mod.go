@@ -47,14 +47,15 @@ func (m *ModDepManager) Init() error {
 
 func (m *ModDepManager) AddDependency(flogoImport Import) error {
 
+	// todo: optimize the following
+
 	// use "go mod edit" (instead of "go get") as first method
 	err := ExecCmd(exec.Command("go", "mod", "edit", "-require", flogoImport.GoModImportPath()), m.srcDir)
 	if err != nil {
 		return err
 	}
 
-	// force resolution
-	// TODO: add a flag to skip download and perform download later (useful in 'flogo create' command for instance)
+
 	err = ExecCmd(exec.Command("go", "mod", "verify"), m.srcDir)
 	if err == nil {
 		err = ExecCmd(exec.Command("go", "mod", "download", flogoImport.ModulePath()), m.srcDir)
