@@ -134,38 +134,9 @@ func (p *appProjectImpl) GetGoImports(withVersion bool) ([]util.Import, error) {
 }
 
 func (p *appProjectImpl) addImportsInGo(ignoreError bool, imports ...util.Import) error {
-	importsFile := filepath.Join(p.SrcDir(), fileImportsGo)
 
-	fset := token.NewFileSet()
-	file, err := parser.ParseFile(fset, importsFile, nil, parser.ImportsOnly)
-	if err != nil {
-		return err
-	}
+	return addImportsInGo(p, ignoreError, imports...)
 
-	for _, i := range imports {
-		err := p.DepManager().AddDependency(i)
-		if err != nil {
-			if ignoreError {
-				fmt.Printf("Warning: unable to install '%s'\n", i)
-				continue
-			}
-
-			fmt.Fprintf(os.Stderr, "Error in installing '%s'\n", i)
-
-			return err
-		}
-		util.AddImport(fset, file, i.GoImportPath())
-	}
-
-	f, err := os.Create(importsFile)
-	defer f.Close()
-	if err := printer.Fprint(f, fset, file); err != nil {
-		return err
-	}
-
-	//p.dm.Finalize()
-
-	return nil
 }
 
 func (p *appProjectImpl) addImportsInJson(ignoreError bool, imports ...util.Import) error {
@@ -243,5 +214,38 @@ func (p *appProjectImpl) RemoveImports(imports ...string) error {
 		return err
 	}
 
+	return nil
+}
+
+func addImportsInGo(project common.AppProject, ignoreError bool, imports ...util.Import) error {
+
+	importsFile := filepath.Join(project.SrcDir(), fileImportsGo)
+
+	fset := token.NewFileSet()
+	file, err := parser.ParseFile(fset, importsFile, nil, parser.ImportsOnly)
+	if err != nil {
+		return err
+	}
+
+	for _, i := range imports {
+		err := project.DepManager().AddDependency(i)
+		if err != nil {
+			if ignoreError {
+				fmt.Printf("Warning: unable to install '%s'\n", i)
+				continue
+			}
+
+			fmt.Fprintf(os.Stderr, "Error in installing '%s'\n", i)
+
+			return err
+		}
+		util.AddImport(fset, file, i.GoImportPath())
+	}
+
+	f, err := os.Create(importsFile)
+	defer f.Close()
+	if err := printer.Fprint(f, fset, file); err != nil {
+		return err
+	}
 	return nil
 }

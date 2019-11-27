@@ -2,9 +2,6 @@ package api
 
 import (
 	"fmt"
-	"go/parser"
-	"go/printer"
-	"go/token"
 	"os"
 	"path/filepath"
 	"strings"
@@ -72,20 +69,21 @@ func SyncProjectImports(project common.AppProject) error {
 			engImportsMap[imp.GoImportPath()] = imp
 		}
 
-		fset := token.NewFileSet()
-		file, err := parser.ParseFile(fset, filepath.Join(project.SrcDir(), fileImportsGo), nil, parser.ImportsOnly)
-		if err != nil {
-			return err
-		}
+		var toAddGo []util.Import
+
 		for goPath, imp := range engImportsMap {
 
 			if _, ok := goImportsMap[goPath]; !ok {
-				util.AddImport(fset, file, imp.GoImportPath())
+				toAdd = append(toAddGo, imp)
+				if Verbose() {
+					fmt.Println("Adding missing Go import: ", goPath)
+				}
 			}
 		}
-		f, err := os.Create(filepath.Join(project.SrcDir(), fileImportsGo))
-		defer f.Close()
-		if err := printer.Fprint(f, fset, file); err != nil {
+
+		err = addImportsInGo(project, false, toAdd...)
+
+		if err != nil {
 			return err
 		}
 	}
