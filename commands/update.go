@@ -27,38 +27,43 @@ var updateCmd = &cobra.Command{
 	Short: "update a project contribution/dependency",
 	Long:  `Updates a contribution or dependency in the project`,
 	Run: func(cmd *cobra.Command, args []string) {
-		currProject := common.CurrentProject()
 
-		if !updateAll {
-			if len(args) < 1 {
-				fmt.Fprintf(os.Stderr, "Contribution not specified")
-				os.Exit(1)
-			}
-			err := api.UpdatePkg(currProject, args[0])
+		updatePackage(common.CurrentProject(), args, updateAll)
+
+	},
+}
+
+func updatePackage(project common.AppProject, args []string, all bool) {
+
+	if !all {
+		if len(args) < 1 {
+			fmt.Fprintf(os.Stderr, "Contribution not specified")
+			os.Exit(1)
+		}
+		err := api.UpdatePkg(project, args[0])
+
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error updating contribution/dependency: %v\n", err)
+			os.Exit(1)
+		}
+
+	} else {
+		//Get all imports
+		imports, err := util.GetAppImports(filepath.Join(project.Dir(), fJsonFile), project.DepManager(), true)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error updating all contributions: %v\n", err)
+			os.Exit(1)
+		}
+		//Update each package in imports
+		for _, imp := range imports.GetAllImports() {
+
+			err = api.UpdatePkg(project, imp.GoGetImportPath())
 
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error updating contribution/dependency: %v\n", err)
 				os.Exit(1)
 			}
-
-		} else {
-			//Get all imports
-			imports, err := util.GetAppImports(filepath.Join(currProject.Dir(), fJsonFile), currProject.DepManager(), true)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Error updating all contributions: %v\n", err)
-				os.Exit(1)
-			}
-			//Update each package in imports
-			for _, imp := range imports.GetAllImports() {
-
-				err = api.UpdatePkg(currProject, imp.GoGetImportPath())
-
-				if err != nil {
-					fmt.Fprintf(os.Stderr, "Error updating contribution/dependency: %v\n", err)
-					os.Exit(1)
-				}
-			}
 		}
+	}
 
-	},
 }
