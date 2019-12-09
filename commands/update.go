@@ -15,7 +15,7 @@ var updateAll bool
 
 func init() {
 	rootCmd.AddCommand(updateCmd)
-	updateCmd.Flags().BoolVarP(&updateAll, "all", "l", false, "update all contributions")
+	updateCmd.Flags().BoolVarP(&updateAll, "all", "", false, "update all contributions")
 }
 
 const (
