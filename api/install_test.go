@@ -107,7 +107,7 @@ func TestInstallLegacyPkg(t *testing.T) {
 	t.Logf("Current dir '%s'", testEnv.currentDir)
 	_ = os.Chdir(testEnv.currentDir)
 
-	_, err := CreateProject(testEnv.currentDir, "myApp", "", "")
+	_, err := CreateProject(testEnv.currentDir, "myApp", "", "v0.9.2")
 
 	assert.Nil(t, err)
 
@@ -172,7 +172,7 @@ func TestInstallPkgWithVersion(t *testing.T) {
 
 	assert.Nil(t, err)
 
-	err = InstallPackage(NewAppProject(filepath.Join(testEnv.currentDir, "myApp")), "github.com/project-flogo/contrib/activity/log@v0.9.0-alpha.4")
+	err = InstallPackage(NewAppProject(filepath.Join(testEnv.currentDir, "myApp")), "github.com/project-flogo/contrib/activity/log@v0.9.0")
 	assert.Nil(t, err)
 
 	appProject := NewAppProject(filepath.Join(testEnv.currentDir, "myApp"))
