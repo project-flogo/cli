@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/project-flogo/cli/common"
 	"github.com/project-flogo/cli/util"
@@ -237,7 +238,7 @@ func (p *appProjectImpl) RemoveImports(imports ...string) error {
 	}
 
 	for _, impPath := range imports {
-		util.DeleteImport(fset, file, impPath)
+		util.DeleteImport(fset, file, strings.Trim(impPath, "\""))
 	}
 
 	f, err := os.Create(importsFile)
