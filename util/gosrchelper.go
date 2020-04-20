@@ -22,7 +22,7 @@ func FindOldPackageSrc(pkg string) (srcPath, srcVer string, err error) {
 
 	if _, e := os.Stat(path); !os.IsNotExist(e) {
 		// path/to/whatever exists
-		v := GetPackageVersionOld(pkg)
+		v := GetPackageVersionFromSource(pkg)
 
 		return path, v, nil
 	}
