@@ -14,14 +14,13 @@ builds:
       - GO111MODULE=on
     main: ./cmd/flogo/
     binary: flogo
-
-archive:
-  format: binary
-  replacements:
-    darwin: osx
-    linux: linux
-    windows: win
-    amd64: x86_64
+archives:
+  - format: binary
+    replacements:
+      darwin: osx
+      linux: linux
+      windows: win
+      amd64: x86_64
 checksum:
   name_template: 'checksums.txt'
 changelog:
