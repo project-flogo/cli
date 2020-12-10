@@ -18,7 +18,7 @@ import (
 )
 
 type DepManager interface {
-	Init() error
+	Init(string) error
 	AddDependency(flogoImport Import) error
 	GetPath(flogoImport Import) (string, error)
 	AddReplacedContribForBuild() error
@@ -35,7 +35,13 @@ type ModDepManager struct {
 	localMods map[string]string
 }
 
-func (m *ModDepManager) Init() error {
+func (m *ModDepManager) Init(modFilePath string) error {
+	if len(modFilePath) > 0 {
+		// try to copy specified go.mod file
+		if err := CopyFile(modFilePath, filepath.Join(m.srcDir, "go.mod")); err == nil {
+			return nil
+		}
+	}
 
 	err := ExecCmd(exec.Command("go", "mod", "init", "main"), m.srcDir)
 	if err == nil {
@@ -54,7 +60,6 @@ func (m *ModDepManager) AddDependency(flogoImport Import) error {
 	if err != nil {
 		return err
 	}
-
 
 	err = ExecCmd(exec.Command("go", "mod", "verify"), m.srcDir)
 	if err == nil {

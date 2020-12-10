@@ -10,10 +10,12 @@ import (
 
 var flogoJsonPath string
 var coreVersion string
+var modFilePath string
 
 func init() {
 	CreateCmd.Flags().StringVarP(&flogoJsonPath, "file", "f", "", "specify a flogo.json to create project from")
 	CreateCmd.Flags().StringVarP(&coreVersion, "cv", "", "", "specify core library version (ex. master)")
+	CreateCmd.Flags().StringVarP(&modFilePath, "mod", "m", "", "go.mod file to override default settings")
 	rootCmd.AddCommand(CreateCmd)
 }
 
@@ -36,7 +38,7 @@ var CreateCmd = &cobra.Command{
 			fmt.Fprintf(os.Stderr, "Error determining working directory: %v\n", err)
 			os.Exit(1)
 		}
-		_, err = api.CreateProject(currentDir, appName, flogoJsonPath, coreVersion)
+		_, err = api.CreateProject(currentDir, appName, flogoJsonPath, modFilePath, coreVersion)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error creating project: %v\n", err)
 			os.Exit(1)
