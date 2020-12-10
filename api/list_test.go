@@ -21,7 +21,7 @@ func TestListAllContribs(t *testing.T) {
 	t.Logf("Current dir '%s'", testEnv.currentDir)
 	os.Chdir(testEnv.currentDir)
 
-	_, err := CreateProject(testEnv.currentDir, "myApp", "", "")
+	_, err := CreateProject(testEnv.currentDir, "myApp", "", "", "")
 
 	assert.Equal(t, nil, err)
 
@@ -50,7 +50,7 @@ func TestListWithLegacyPkg(t *testing.T) {
 	}
 	defer file.Close()
 	fmt.Fprintf(file, newJsonString)
-	_, err = CreateProject(testEnv.currentDir, "temp", "flogo.json", "")
+	_, err = CreateProject(testEnv.currentDir, "temp", "flogo.json", "", "")
 	assert.Equal(t, nil, err)
 
 	err = ListContribs(NewAppProject(filepath.Join(testEnv.currentDir, "temp")), true, "")

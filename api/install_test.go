@@ -107,7 +107,7 @@ func TestInstallLegacyPkg(t *testing.T) {
 	t.Logf("Current dir '%s'", testEnv.currentDir)
 	_ = os.Chdir(testEnv.currentDir)
 
-	_, err := CreateProject(testEnv.currentDir, "myApp", "", "v0.9.2")
+	_, err := CreateProject(testEnv.currentDir, "myApp", "", "", "v0.9.2")
 
 	assert.Nil(t, err)
 
@@ -138,7 +138,7 @@ func TestInstallPkg(t *testing.T) {
 	t.Logf("Current dir '%s'", testEnv.currentDir)
 	_ = os.Chdir(testEnv.currentDir)
 
-	_, err := CreateProject(testEnv.currentDir, "myApp", "", "")
+	_, err := CreateProject(testEnv.currentDir, "myApp", "", "", "")
 
 	assert.Nil(t, err)
 
@@ -168,7 +168,7 @@ func TestInstallPkgWithVersion(t *testing.T) {
 	t.Logf("Current dir '%s'", testEnv.currentDir)
 	_ = os.Chdir(testEnv.currentDir)
 
-	_, err := CreateProject(testEnv.currentDir, "myApp", "", "")
+	_, err := CreateProject(testEnv.currentDir, "myApp", "", "", "")
 
 	assert.Nil(t, err)
 
@@ -198,7 +198,7 @@ func TestListPkg(t *testing.T) {
 	t.Logf("Current dir '%s'", testEnv.currentDir)
 	_ = os.Chdir(testEnv.currentDir)
 
-	_, err := CreateProject(testEnv.currentDir, "myApp", "", "")
+	_, err := CreateProject(testEnv.currentDir, "myApp", "", "", "")
 
 	assert.Equal(t, nil, err)
 
