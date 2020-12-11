@@ -18,7 +18,7 @@ import (
 )
 
 type DepManager interface {
-	Init() error
+	Init(string) error
 	AddDependency(flogoImport Import) error
 	GetPath(flogoImport Import) (string, error)
 	AddReplacedContribForBuild() error
@@ -35,7 +35,16 @@ type ModDepManager struct {
 	localMods map[string]string
 }
 
-func (m *ModDepManager) Init() error {
+func (m *ModDepManager) Init(modFilePath string) error {
+	if len(modFilePath) > 0 {
+		// try to copy specified go.mod file
+		err := CopyFile(modFilePath, filepath.Join(m.srcDir, "go.mod"))
+		if err != nil {
+			fmt.Printf("WARNING: failed to copy go.mod file %+v\n", err)
+		} else {
+			return nil
+		}
+	}
 
 	err := ExecCmd(exec.Command("go", "mod", "init", "main"), m.srcDir)
 	if err == nil {
@@ -54,7 +63,6 @@ func (m *ModDepManager) AddDependency(flogoImport Import) error {
 	if err != nil {
 		return err
 	}
-
 
 	err = ExecCmd(exec.Command("go", "mod", "verify"), m.srcDir)
 	if err == nil {
@@ -299,7 +307,8 @@ func (m *ModDepManager) AddReplacedContribForBuild() error {
 		localModules := strings.Split(data[index-1:], "\n")
 
 		for _, val := range localModules {
-			if val != "" {
+			// check lines starting with 'replace' only
+			if val != "" && strings.HasPrefix(val, "replace") {
 				mods := strings.Split(val, " ")
 				//If the length of mods is more than 4 it contains the versions of package
 				//so it is stating to use different version of pkg rather than

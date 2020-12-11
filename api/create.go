@@ -14,7 +14,7 @@ import (
 
 var fileSampleEngineMain = filepath.Join("examples", "engine", "main.go")
 
-func CreateProject(basePath, appName, appCfgPath, coreVersion string) (common.AppProject, error) {
+func CreateProject(basePath, appName, appCfgPath, modFilePath, coreVersion string) (common.AppProject, error) {
 
 	var err error
 	var appJson string
@@ -58,7 +58,7 @@ func CreateProject(basePath, appName, appCfgPath, coreVersion string) (common.Ap
 		fmt.Printf("Setting up app directory: %s\n", appDir)
 	}
 
-	err = setupAppDirectory(dm, appDir, coreVersion)
+	err = setupAppDirectory(dm, appDir, modFilePath, coreVersion)
 	if err != nil {
 		return nil, err
 	}
@@ -118,7 +118,7 @@ func createAppDirectory(basePath, appName string) (string, error) {
 }
 
 //setupAppDirectory sets up the flogo app directory
-func setupAppDirectory(dm util.DepManager, appPath, coreVersion string) error {
+func setupAppDirectory(dm util.DepManager, appPath, modFilePath, coreVersion string) error {
 
 	err := os.Mkdir(filepath.Join(appPath, dirBin), os.ModePerm)
 	if err != nil {
@@ -140,7 +140,8 @@ func setupAppDirectory(dm util.DepManager, appPath, coreVersion string) error {
 		return err
 	}
 
-	err = dm.Init()
+	// create go.mod only if modFilePath is not specified or the specified file does not exist
+	err = dm.Init(modFilePath)
 	if err != nil {
 		return err
 	}

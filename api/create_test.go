@@ -105,7 +105,7 @@ func TestCmdCreate_noflag(t *testing.T) {
 	defer testEnv.cleanup()
 
 	t.Logf("Current dir '%s'", testEnv.currentDir)
-	_, err := CreateProject(testEnv.currentDir, "myApp", "", "")
+	_, err := CreateProject(testEnv.currentDir, "myApp", "", "", "")
 	assert.Equal(t, nil, err)
 
 	_, err = os.Stat(filepath.Join(tempDir, "myApp", "src", "go.mod"))
@@ -140,7 +140,7 @@ func TestCmdCreate_flag(t *testing.T) {
 	}
 	defer file.Close()
 	fmt.Fprintf(file, jsonString)
-	_, err = CreateProject(testEnv.currentDir, "flogo", "flogo.json", "")
+	_, err = CreateProject(testEnv.currentDir, "flogo", "flogo.json", "", "")
 	assert.Equal(t, nil, err)
 
 	_, err = os.Stat(filepath.Join(tempDir, "flogo", "src", "go.mod"))
@@ -169,7 +169,7 @@ func TestCmdCreate_masterCore(t *testing.T) {
 	t.Logf("Current dir '%s'", testEnv.currentDir)
 	os.Chdir(testEnv.currentDir)
 
-	_, err = CreateProject(testEnv.currentDir, "myApp", "", "master")
+	_, err = CreateProject(testEnv.currentDir, "myApp", "", "", "master")
 	assert.Equal(t, nil, err)
 }
 

@@ -26,10 +26,9 @@ var fileSampleShimSupport = filepath.Join("examples", "engine", "shim", fileShim
 
 var flogoImportPattern = regexp.MustCompile(`^(([^ ]*)[ ]+)?([^@:]*)@?([^:]*)?:?(.*)?$`)
 
-
 type ShimBuilder struct {
 	appBuilder common.Builder
-	shim string
+	shim       string
 }
 
 func (sb *ShimBuilder) Build(project common.AppProject) error {
@@ -39,7 +38,8 @@ func (sb *ShimBuilder) Build(project common.AppProject) error {
 		return err
 	}
 
-	defer shimCleanup(project)
+	// do not clean up shim source code!
+	//	defer shimCleanup(project)
 
 	err = createShimSupportGoFile(project)
 	if err != nil {
