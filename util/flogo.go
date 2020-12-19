@@ -27,10 +27,29 @@ type FlogoAppDescriptor struct {
 	Imports     []string `json:"imports"`
 
 	Triggers []*FlogoTriggerConfig `json:"triggers"`
+	Resources []*FlogoResourceConfig `json:"resources"`
 }
 
 type FlogoTriggerConfig struct {
 	Id   string `json:"id"`
 	Ref  string `json:"ref"`
 	Type string `json:"type"`
+}
+
+type FlogoResourceConfig struct {
+	Id   string `json:"id"`
+	Data FlogoResourceDataConfig `json:"data"`
+}
+
+type FlogoResourceDataConfig struct {
+	Tasks []FlogoResourceDataTaskConfig `json:"tasks"`
+}
+
+type FlogoResourceDataTaskConfig struct {
+	Id   string `json:"id"`
+	Activity FlogoResourceDataTaskActivityConfig `json:"activity"`
+}
+
+type FlogoResourceDataTaskActivityConfig struct {
+	Ref  string `json:"ref"`
 }

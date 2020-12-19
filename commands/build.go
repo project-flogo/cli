@@ -18,7 +18,7 @@ var syncImport bool
 var flogoJsonFile string
 
 func init() {
-	buildCmd.Flags().StringVarP(&buildShim, "shim", "", "", "use shim trigger")
+	buildCmd.Flags().StringVarP(&buildShim, "shim", "", "", "use shim trigger or activity")
 	buildCmd.Flags().BoolVarP(&buildOptimize, "optimize", "o", false, "optimize build")
 	buildCmd.Flags().BoolVarP(&buildEmbed, "embed", "e", false, "embed configuration in binary")
 	buildCmd.Flags().StringVarP(&flogoJsonFile, "file", "f", "", "specify a flogo.json to build")
