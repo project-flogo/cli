@@ -172,3 +172,33 @@ func DeleteFile(path string) error {
 
 	return nil
 }
+
+// SwapFile is like a copy but use a temporary file and rename it
+// to allow running executable replacement.
+// Thanks to https://gist.github.com/fenollp/7e31e6462b10c96aef443351bce6aea7
+func SwapFile(src, dst string) error {
+	srcInfo, err := os.Stat(src)
+	if err != nil {
+		return err
+	}
+	destDir := filepath.Dir(dst)
+	tmpFile := filepath.Join(destDir, "exe_swap")
+
+	defer DeleteFile(tmpFile)
+
+	data, err := ioutil.ReadFile(src)
+	if err != nil {
+		return err
+	}
+
+	if err := ioutil.WriteFile(tmpFile, data, srcInfo.Mode()); err != nil {
+		return err
+	}
+
+	if err := os.Rename(tmpFile, dst); err != nil {
+		return err
+	}
+
+	return nil
+
+}

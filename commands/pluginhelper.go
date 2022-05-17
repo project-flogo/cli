@@ -105,7 +105,7 @@ func UpdateCLI(pluginPkg string, updateOption int) error {
 		cliExe = cliExe + ".exe"
 	}
 
-	err = util.Copy(filepath.Join(cliCmdPath, cliExe), exPath, false)
+	err = util.SwapFile(filepath.Join(cliCmdPath, cliExe), exPath)
 	if err != nil {
 		//fmt.Fprintf(os.Stderr, "Error: %v\n", osErr)
 		return err
