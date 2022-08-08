@@ -34,10 +34,8 @@ To get started with the Flogo CLI you'll need to have a few things
 To install the CLI, simply open a terminal and enter the below command
 
 ```
-$ go get -u github.com/project-flogo/cli/...
+$ go install github.com/project-flogo/cli/...@latest
 ```
-
-_Note that the -u parameter automatically updates the cli if it exists_
 
 ### Build the CLI from source
 You can build the cli from source code as well, which is convenient if you're developing new features for it! To do that, follow these easy steps

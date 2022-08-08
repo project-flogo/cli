@@ -27,8 +27,6 @@
 ./flogo
 dist
 
-go.sum
-
 go.mod.build
 
 cmd/flogo/currentversion.go
