@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"os/exec"
 
 	"github.com/project-flogo/cli/common"
 	"github.com/project-flogo/cli/util"
@@ -229,6 +230,15 @@ func importDependencies(project common.AppProject) error {
 			//instStr := fmt.Sprintf("Installed %s:", cType)
 			//fmt.Printf("%-20s %s\n", instStr, imp)
 		}
+	}
+	
+	if Verbose() {
+		fmt.Printf("Tidying go mod...")
+	}
+	
+	err = util.ExecCmd(exec.Command("go", "mod", "tidy"), project.SrcDir())
+	if err != nil {
+		fmt.Printf("Failed to clean deps: %s\n", err)
 	}
 
 	if legacySupportRequired {
