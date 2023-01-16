@@ -33,7 +33,7 @@ Flags:
   -e, --embed         embed configuration in binary
   -f, --file string   specify a flogo.json to build
   -o, --optimize      optimize build
-      --shim string   use shim trigger   
+      --shim string   use shim trigger or activity 
 ```
 _**Note:** the optimize flag removes unused trigger, acitons and activites from the built binary._
 

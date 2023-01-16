@@ -85,96 +85,129 @@ func prepareShim(project common.AppProject, shim string) (bool, error) {
 		return false, err
 	}
 
+	var ref string = ""
+	var triggerFound bool = false
+
 	for _, trgCfg := range descriptor.Triggers {
-		if trgCfg.Id == shim {
 
-			ref := trgCfg.Ref
-
-			if trgCfg.Ref != "" {
-				found := false
-				ref, found = GetAliasRef("flogo:trigger", trgCfg.Ref)
-				if !found {
-					return false, fmt.Errorf("unable to determine ref for trigger: %s", trgCfg.Id)
-				}
-			}
-
-			refImport, err := util.NewFlogoImportFromPath(ref)
-			if err != nil {
-				return false, err
-			}
-
-			impPath, err := project.GetPath(refImport)
-			if err != nil {
-				return false, err
-			}
-
-			var shimFilePath string
-
-			shimFilePath = filepath.Join(impPath, dirShim, fileShimGo)
-
-			if _, err := os.Stat(shimFilePath); err == nil {
-
-				err = util.CopyFile(shimFilePath, filepath.Join(project.SrcDir(), fileShimGo))
-				if err != nil {
-					return false, err
-				}
-
-				// Check if this shim based trigger has a gobuild file. If the trigger has a gobuild
-				// execute that file, otherwise check if there is a Makefile to execute
-				goBuildFilePath := filepath.Join(impPath, dirShim, fileBuildGo)
-
-				makefilePath := filepath.Join(shimFilePath, dirShim, fileMakefile)
-
-				if _, err := os.Stat(goBuildFilePath); err == nil {
-					fmt.Println("Using build.go to build shim......")
-
-					err = util.CopyFile(goBuildFilePath, filepath.Join(project.SrcDir(), fileBuildGo))
-					if err != nil {
-						return false, err
-					}
-
-					// Execute go run gobuild.go
-					err = util.ExecCmd(exec.Command("go", "run", fileBuildGo), project.SrcDir())
-					if err != nil {
-						return false, err
-					}
-
-					return true, nil
-				} else if _, err := os.Stat(makefilePath); err == nil {
-					//look for Makefile and execute it
-					fmt.Println("Using make file to build shim...")
-
-					err = util.CopyFile(makefilePath, filepath.Join(project.SrcDir(), fileMakefile))
-					if err != nil {
-						return false, err
-					}
-
-					if Verbose() {
-						fmt.Println("Make File:", makefilePath)
-					}
-
-					// Execute make
-					cmd := exec.Command("make", "-C", project.SrcDir())
-					cmd.Stdout = os.Stdout
-					cmd.Stderr = os.Stderr
-					cmd.Env = util.ReplaceEnvValue(os.Environ(), "GOPATH", project.Dir())
-
-					err = cmd.Run()
-					if err != nil {
-						return false, err
-					}
-
-					return true, nil
-				} else {
-					return false, nil
-				}
-			}
-
-			break
+		if trgCfg.Id != shim {
+			continue 
 		}
+
+		ref, triggerFound = GetAliasRef("flogo:trigger", trgCfg.Ref)
+
+		if !triggerFound {
+			break
+		} 
+		
+		return prepareShimBuildOrMake(project, ref)
+
 	}
 
-	return false, fmt.Errorf("unable to to find shim trigger: %s", shim)
+	if !triggerFound {
+
+		for _, resourceCfg := range descriptor.Resources {
+
+			for _, taskConfig := range resourceCfg.Data.Tasks {
+
+				if taskConfig.Id != shim {
+					continue
+				}
+
+				var found bool
+				ref, found = GetAliasRef("flogo:activity", taskConfig.Activity.Ref)
+				
+				if !found {
+					break
+				} 
+
+				return prepareShimBuildOrMake(project, ref)
+
+			}
+
+		}
+
+	}
+
+	return false, fmt.Errorf("unable to to find shim trigger or activity: %s", shim)
+}
+
+func prepareShimBuildOrMake(project common.AppProject, ref string) (bool, error) {
+
+	refImport, err := util.NewFlogoImportFromPath(ref)
+	if err != nil {
+		return false, err
+	}
+
+	impPath, err := project.GetPath(refImport)
+	if err != nil {
+		return false, err
+	}
+
+	// var shimFilePath string
+
+	// shimFilePath := filepath.Join(impPath, dirShim, fileShimGo)
+	shimDir := filepath.Join(impPath, dirShim)
+
+	// if _, err := os.Stat(shimFilePath); err == nil {
+	if _, err := os.Stat(shimDir); err == nil {
+
+		// err = util.CopyFile(shimFilePath, filepath.Join(project.SrcDir(), fileShimGo))
+		// if err != nil {
+		// 	return false, err
+		// }
+
+		goBuildFilePath := filepath.Join(shimDir, fileBuildGo)
+
+		makefilePath := filepath.Join(shimDir, fileMakefile)
+
+		if _, err := os.Stat(goBuildFilePath); err == nil {
+			fmt.Println("Using build.go to build shim......")
+
+			err = util.CopyFile(goBuildFilePath, filepath.Join(project.SrcDir(), fileBuildGo))
+			if err != nil {
+				return false, err
+			}
+
+			// Execute go run gobuild.go
+			err = util.ExecCmd(exec.Command("go", "run", fileBuildGo), project.SrcDir())
+			if err != nil {
+				return false, err
+			}
+
+			return true, nil
+
+		} else if _, err := os.Stat(makefilePath); err == nil {
+
+			//look for Makefile and execute it
+			fmt.Println("Using make file to build shim...")
+
+			err = util.CopyFile(makefilePath, filepath.Join(project.SrcDir(), fileMakefile))
+			if err != nil {
+				return false, err
+			}
+
+			if Verbose() {
+				fmt.Println("Make File:", makefilePath)
+			}
+
+			// Execute make
+			cmd := exec.Command("make", "-C", project.SrcDir())
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+			cmd.Env = util.ReplaceEnvValue(os.Environ(), "GOPATH", project.Dir())
+
+			err = cmd.Run()
+			if err != nil {
+				return false, err
+			}
+
+			return true, nil
+			
+		} 
+	}
+
+	return  false, nil
 }
 
 func shimCleanup(project common.AppProject) {
