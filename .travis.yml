@@ -7,7 +7,6 @@ env:
   - GO111MODULE=on
 install: skip
 script:
-  - GO111MODULE=off go get ./... # to populate $GOPATH/src for tests
   - go build ./...
   - go test ./...
 deploy:
