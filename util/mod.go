@@ -55,7 +55,6 @@ func (m *ModDepManager) AddDependency(flogoImport Import) error {
 		return err
 	}
 
-
 	err = ExecCmd(exec.Command("go", "mod", "verify"), m.srcDir)
 	if err == nil {
 		err = ExecCmd(exec.Command("go", "mod", "download", flogoImport.ModulePath()), m.srcDir)
@@ -225,7 +224,7 @@ func (m *ModDepManager) GetAllImports() (map[string]Import, error) {
 	return result, nil
 }
 
-//This function converts capotal letters in package name
+// This function converts capotal letters in package name
 // to !(smallercase). Eg C => !c . As this is the way
 // go.mod saves every repository in the $GOPATH/pkg/mod.
 func toLower(s []string) []string {
@@ -304,12 +303,12 @@ func (m *ModDepManager) AddReplacedContribForBuild() error {
 				//If the length of mods is more than 4 it contains the versions of package
 				//so it is stating to use different version of pkg rather than
 				// the local pkg.
-				if len(mods) < 5 {
-
-					m.localMods[mods[1]] = mods[3]
-				} else {
-
-					m.localMods[mods[1]] = filepath.Join(os.Getenv("GOPATH"), "pkg", "mod", mods[3]+"@"+mods[4])
+				if len(mods) >= 4 {
+					if len(mods) < 5 {
+						m.localMods[mods[1]] = mods[3]
+					} else {
+						m.localMods[mods[1]] = filepath.Join(os.Getenv("GOPATH"), "pkg", "mod", mods[3]+"@"+mods[4])
+					}
 				}
 
 			}
